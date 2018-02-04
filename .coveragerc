@@ -1,0 +1,13 @@
+[run]
+branch=True
+include=
+    qetch/*
+
+[report]
+show_missing=True
+omit=
+    qetch/__init__.py
+    qetch/__version__.py
+    qetch/const.py
+    qetch/meta/*
+    */_common.py
