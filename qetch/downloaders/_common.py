@@ -7,7 +7,8 @@ import enum
 import time
 import uuid
 import shutil
-from typing import (Any, Callable,)
+import itertools
+from typing import (Any, List, Tuple, Callable,)
 from tempfile import (TemporaryDirectory,)
 from concurrent.futures import (ThreadPoolExecutor,)
 
@@ -18,6 +19,14 @@ import blinker
 
 
 class DownloadState(enum.Enum):
+    """ An enum of allowed download states.
+
+    Values:
+        - ``STOPPED``: indicates the download is stopped (error occured)
+        - ``RUNNING``: indicates the download is running
+        - ``PREPARING``: indicates the download is starting up
+        - ``FINISHED``: indicates the download is finished (successfully)
+    """
 
     STOPPED = 'stopped'
     RUNNING = 'running'
@@ -26,33 +35,77 @@ class DownloadState(enum.Enum):
 
 
 class BaseDownloader(abc.ABC):
+    """ The base abstract base downloader.
+    `All downloaders must extend from this class.`
+    """
 
     on_progress = blinker.Signal()
 
     @property
     def download_state(self):
+        """ dict[str,DownloadState]: The download state dictionary.
+        """
+
         if not hasattr(self, '_download_state'):
             self._download_state = {}
         return self._download_state
 
     @property
     def progress_store(self):
+        """ dict[str,int]: The downloaded content size for progress reporting.
+        """
+
         if not hasattr(self, '_progress_store'):
             self._progress_store = {}
         return self._progress_store
 
-    @classmethod
+    @abc.abstractclassmethod
     def can_handle(cls, content: Content):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _handle_download(self, source: str, url: str, to_path: str):
+    def handle_download(self, source: str, url: str, to_path: str) -> str:
         raise NotImplementedError()
 
-    def _handle_progress(
+    def _calc_ranges(
+        self, content_length: int, max_connections: int
+    ) -> List[Tuple[int, int]]:
+        """ Calculates byte ranges given a content size and the number of \
+            allowed connections.
+
+        Args:
+            content_length (int): The total size of the content to download.
+            max_connections (int): The maximum allowed connections to use.
+
+        Returns:
+            list[tuple[int, int]]: A list of size ``max_connections`` tuple \
+                ``(start, end)`` byte ranges.
+        """
+
+        (start, end,) = itertools.tee(list(range(
+            0, content_length,
+            (content_length // max_connections)
+        )) + [content_length])
+        next(end, None)
+        ranges = list(zip(start, end))
+        if len(ranges) > max_connections:
+            ranges[-2] = (ranges[-2][0], ranges[-1][-1],)
+            del ranges[-1]
+        return ranges
+
+    def handle_progress(
         self, download_id: str, content_length: int,
         update_delay: float=0.1
     ):
+        """ The progress reporting handler.
+
+        Args:
+            download_id (str): The unique id of the download request.
+            content_length (int): The total size of the downloading content.
+            update_delay (float, optional): The frequency (in seconds) which \
+                progress updates are emitted.
+        """
+
         try:
             # setup sync values if they don't exists (race-condition fix)
             if download_id not in self.download_state:
@@ -85,7 +138,72 @@ class BaseDownloader(abc.ABC):
         self, content: Content, to_path: str,
         max_fragments: int=1, max_connections: int=8,
         progress_hook: Callable[[Any], None]=None, update_delay: float=0.1,
-    ):
+    ) -> str:
+        """ The simplified download method.
+
+        Note:
+            The ``max_fragments`` and ``max_connections`` rules imply that
+            potentially ``(max_fragments * max_connections)`` connections
+            from the local system's IP can exist at any time.
+
+            Many hosts will flag/ban IPs which utilize more than 10
+            connections for a single resource.
+            **For this reason**, ``max_fragments`` and ``max_connections`` are
+            set to 1 and 8 respectively by default.
+
+
+        Args:
+            content (Content): The content instance to download.
+            to_path (str): The path to save the resulting download to.
+            max_fragments (int, optional): The number of fragments to process
+                in parallel.
+            max_connections (int, optional): The number of connections to
+                allow for downloading a single fragment.
+            progress_hook (callable, optional): A progress hook that accepts
+                the arguments ``(download_id, current_size, total_size)`` for
+                progress updates.
+            update_delay (float, optional): The frequency (in seconds) where
+                progress updates are sent to the given ``progress_hook``.
+
+        Returns:
+            str: The downloaded file's local path.
+
+        Examples:
+            Basic usage where ``$HOME`` is the home directory of the
+            currently executing user.
+
+            >>> import os
+            >>> from qetch.extractors import (GfycatExtractor,)
+            >>> from qetch.downloaders import (HTTPDownloader,)
+            >>> content = next(GfycatExtractor().extract(GFYCAT_URL))[0]
+            >>> saved_to = HTTPDownloader().download(
+            ...     content,
+            ...     os.path.expanduser('~/Downloads/saved_content.mp4'))
+            >>> print(saved_to)
+            $HOME/Downloads/saved_content.mp4
+
+            Similar basic usage, but with a given progress hook sent updates
+            every 0.1 seconds.
+
+            >>> def progress(download_id, current, total):
+            ...     print(f'{((current / total) * 100.0):6.2f}')
+            >>> saved_to = HTTPDownloader().download(
+            ...     content,
+            ...     os.path.expanduser('~/Downloads/saved_content.mp4'),
+            ...     progress_hook=progress,
+            ...     update_delay=0.1)
+              0.00
+              0.00
+             23.01
+             54.32
+             73.09
+             90.49
+             97.12
+            100.00
+            >>> print(saved_to)
+            $HOME/Downloads/saved_content.mp4
+        """
+
         assert (max_fragments > 0), (
             f"'max_fragments' must be at least 1, received {max_fragments!r}"
         )
@@ -106,7 +224,7 @@ class BaseDownloader(abc.ABC):
                 if callable(progress_hook):
                     self.on_progress.connect(progress_hook)
                     executor.submit(
-                        self._handle_progress,
+                        self.handle_progress,
                         *(download_id, content.get_size()),
                         **{'update_delay': update_delay}
                     )
@@ -114,7 +232,7 @@ class BaseDownloader(abc.ABC):
                 download_futures = []
                 for (fragment_idx, fragment,) in enumerate(content.fragments):
                     download_futures.append(executor.submit(
-                        self._handle_download,
+                        self.handle_download,
                         *(
                             download_id, fragment,
                             os.path.join(temporary_dir, str(fragment_idx))

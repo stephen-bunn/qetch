@@ -6,13 +6,16 @@ import pathlib
 import importlib.util
 
 
-def normalize_path(filepath, expand_vars=False):
-    """ Fully normalizes a given filepath to an absolute path.
+def normalize_path(filepath: str, expand_vars: bool=False) -> str:
+    """ Fully normalize a given filepath.
 
-    :param str filepath: The filepath to normalize
-    :param bool expand_vars: Expands embedded environment variables if True
-    :returns: The fully noralized filepath
-    :rtype: str
+    Args:
+        filepath (str): The filepath to normalize.
+        expand_vars (bool, optional): If True, expands variables like
+            ``$HOME`` or ``$USER``.
+
+    Returns:
+        str: The fully normalized filepath.
     """
 
     filepath = str(pathlib.Path(filepath).expanduser().resolve())
@@ -21,12 +24,14 @@ def normalize_path(filepath, expand_vars=False):
     return filepath
 
 
-def is_importable(name):
-    """ Determines if a given package name can be found.
+def is_importable(name: str) -> bool:
+    """ Determines if a given module name can be imported.
 
-    :param str name: The name of the pacakge
-    :returns: True if the package can be found
-    :rtype: bool
+    Args:
+        name (str): The name of the module to check.
+
+    Returns:
+        bool: True if possible to be imported, otherwise False.
     """
 
     return bool(importlib.util.find_spec(name))

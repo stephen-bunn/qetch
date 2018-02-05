@@ -24,6 +24,7 @@ pytest-cov = "*"
 ptpython = "*"
 cprofilev = "*"
 "autopep8" = "*"
+sphinx-autodoc-typehints = "*"
 
 
 [requires]

@@ -41,12 +41,14 @@ with open(os.path.abspath(os.path.join(
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
     'clickdoctools',
+    'sphinx_autodoc_typehints',
 ]
 
-autodoc_member_order = 'bysource'
+autodoc_member_order = 'groupwise'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

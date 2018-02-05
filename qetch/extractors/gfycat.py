@@ -1,8 +1,9 @@
 # Copyright (c) 2018 Stephen Bunn (stephen@bunn.io)
 # MIT License <https://opensource.org/licenses/MIT>
 
+import os
 import datetime
-from typing import (List,)
+from typing import (Any, List, Dict, Match, Generator,)
 
 from .. import (exceptions,)
 from ..content import (Content,)
@@ -13,22 +14,20 @@ import ujson
 
 
 class GfycatExtractor(BaseExtractor):
+    """ The extractor for links to media from ``gfycat.com``.
+    """
 
     name = 'gfycat'
-    description = ''
+    description = ('Site which hosts short high-quality video for sharing.')
     domains = ['gfycat.com']
     handles = {
         'basic': (
-            r'^https?://(?:www.)?gfycat.com/'
-            r'(?P<id>[a-zA-Z]+)/?$'
-        ),
-        'detail': (
-            r'^https?://(?:www.)?gfycat.com/gifs/detail/'
-            r'(?P<id>[a-zA-Z]+)/?$'
+            r'^https?://(?:www\.)?gfycat\.com/'
+            r'(?:gifs/detail/)?(?P<id>[a-zA-Z]+)/?$'
         ),
         'raw': (
-            r'^https?://(?:www.)?(?:[a-zA-Z]+).gfycat.com/'
-            r'(?P<id>[a-zA-Z]+)/?$'
+            r'^https?://(?:[a-z]+\.)gfycat\.com/'
+            r'(?P<id>[a-zA-Z]+)(?:\.[a-zA-Z0-9]+)$'
         )
     }
 
@@ -50,29 +49,79 @@ class GfycatExtractor(BaseExtractor):
         'gifUrl': 0.25,
     }
 
-    def _handle_basic(self, source: str, match):
-        return self._handle_extract(source, match)
+    def _get_data(self, id: str) -> Dict[str, Any]:
+        """ Gets api data for a specific gfycat id.
 
-    def _handle_detail(self, source: str, match):
-        return self._handle_extract(source, match)
+        Args:
+            id (str): The id of the gfycat content to retrieve
 
-    def _handle_raw(self, source: str, match):
-        return self._handle_extract(source, match)
+        Raises:
+            exceptions.ExtractionError: When api call results in non 200 status
 
-    def _handle_extract(self, source: str, match):
-        # build query url using the cajax api base
+        Returns:
+            dict[str,...]: API data dictionary response
+        """
+
         query_url = furl.furl(self._api_base)
-        query_url.path.add(match.groupdict()['id'])
+        query_url.path.add(id)
 
-        # make a request for the api response
         response = self.session.get(query_url.url)
         if response.status_code not in (200,):
             raise exceptions.ExtractionError((
                 f"error retrieving source for {query_url.url!r}, "
                 f"recieved status {response.status_code}"
             ))
-        data = ujson.loads(response.text).get('gfyItem')
+        return ujson.loads(response.text).get('gfyItem')
 
+    def handle_raw(
+        self, source: str, match: Match
+    ) -> Generator[List[Content], None, None]:
+        """ Handles ``raw`` links to gfycat media.
+
+        Args:
+            source (str): The source url
+            match (Match): The source match regex
+
+        Yields:
+            list[Content]: A list of various levels of quality content for \
+                the same source url
+        """
+
+        data = self._get_data(match.groupdict()['id'])
+        yield [Content(
+            uid=f'{self.name}-{data["gfyId"]}-{source.split(".")[-1]}',
+            source=source,
+            fragments=[source],
+            extractor=self,
+            title=data.get('title'),
+            description=data.get('description'),
+            quality=1.0,
+            uploaded_by=(
+                data.get('userName')
+                if data.get('userName') != 'anonymous' else
+                None
+            ),
+            uploaded_date=datetime.datetime.fromtimestamp(
+                int(data.get('createDate'))
+            ),
+            metadata=data
+        )]
+
+    def handle_basic(
+        self, source: str, match: Match
+    ) -> Generator[List[Content], None, None]:
+        """ Handles ``basic`` links to gfycat media.
+
+        Args:
+            source (str): The source url
+            match (Match): The source match regex
+
+        Yields:
+            list[Content]: A list of various levels of quality content for \
+                the same source url
+        """
+
+        data = self._get_data(match.groupdict()['id'])
         # build and yield content list
         content_list = []
         for url_type in self._content_urls:
@@ -97,5 +146,15 @@ class GfycatExtractor(BaseExtractor):
                 ))
         yield content_list
 
-    def merge(self, ordered_filepaths: List[str]):
-        return (ordered_filepaths[0] if len(ordered_filepaths) > 1 else None)
+    def merge(self, ordered_filepaths: List[str]) -> str:
+        """ Handles merging downloaded fragments into a resulting file.
+
+        Args:
+            ordered_filepaths (list[str]): The list of ordered filepaths to \
+                downloaded fragments.
+
+        Returns:
+            str: The resulting merged file's filepath.
+        """
+
+        return (ordered_filepaths[0] if len(ordered_filepaths) > 0 else None)
