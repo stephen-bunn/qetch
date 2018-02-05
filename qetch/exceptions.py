@@ -15,3 +15,11 @@ class ExtractorException(QetchException):
 
 class ExtractionError(ExtractorException):
     pass
+
+
+class AuthenticationException(QetchException):
+    pass
+
+
+class AuthenticationError(AuthenticationException):
+    pass

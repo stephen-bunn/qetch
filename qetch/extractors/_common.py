@@ -5,6 +5,9 @@ import re
 import abc
 from typing import (Any, List, Tuple, Match, Generator,)
 
+from .. import (exceptions,)
+from ..auth import (AuthRegistry, AuthTypes,)
+
 import furl
 import requests
 
@@ -37,6 +40,10 @@ class BaseExtractor(abc.ABC):
 
     @abc.abstractproperty
     def handles(self):
+        raise NotImplementedError()
+
+    @abc.abstractproperty
+    def authentication(self):
         raise NotImplementedError()
 
     @property
@@ -84,7 +91,13 @@ class BaseExtractor(abc.ABC):
     def merge(self, ordered_filepaths: List[str]) -> str:
         raise NotImplementedError()
 
-    def extract(self, url: str) -> Generator[List[Any], None, None]:
+    @abc.abstractmethod
+    def authenticate(self, auth: Tuple[str, str]):
+        raise NotImplementedError()
+
+    def extract(
+        self, url: str, auth: Tuple[str, str]=None
+    ) -> Generator[List[Any], None, None]:
         """ Extracts lists of content from a url.
 
         Note:
@@ -99,6 +112,7 @@ class BaseExtractor(abc.ABC):
 
         Args:
             url (str): The url to extract content from.
+            auth (tuple[str, str], optional): The auth tuple if available.
 
         Raises:
             NotImplementedError: If a given ``handle_{handle_name}``
@@ -139,5 +153,17 @@ class BaseExtractor(abc.ABC):
                 f"no handled method named {handle_method!r} is implemented "
                 f"for {self!r}"
             ))
+        if self.authentication != AuthTypes.NONE:
+            if not isinstance(auth, tuple) or not len(auth) == 2:
+                registry = AuthRegistry()
+                if self.__class__ not in registry:
+                    raise exceptions.AuthenticationError((
+                        f"no valid authentication found for "
+                        f"{self.__class__!r}, received {auth!r} and no "
+                        f"registry entry"
+                    ))
+                auth = registry[self.__class__]
+                del registry
+            self.authenticate(auth)
         for content in getattr(self, handle_method)(url, handle_match):
             yield content

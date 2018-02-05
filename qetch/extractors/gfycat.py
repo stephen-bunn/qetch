@@ -3,9 +3,10 @@
 
 import os
 import datetime
-from typing import (Any, List, Dict, Match, Generator,)
+from typing import (Any, Tuple, List, Dict, Match, Generator,)
 
 from .. import (exceptions,)
+from ..auth import (AuthTypes,)
 from ..content import (Content,)
 from ._common import (BaseExtractor,)
 
@@ -19,6 +20,7 @@ class GfycatExtractor(BaseExtractor):
 
     name = 'gfycat'
     description = ('Site which hosts short high-quality video for sharing.')
+    authentication = AuthTypes.OAUTH
     domains = ['gfycat.com']
     handles = {
         'basic': (
@@ -145,6 +147,15 @@ class GfycatExtractor(BaseExtractor):
                     metadata=data
                 ))
         yield content_list
+
+    def authenticate(self, auth: Tuple[str, str]):
+        """ Handles authenticating the extractor if necessary.
+
+        Args:
+            auth (tuple[str, str]): The authentication tuple is available.
+        """
+
+        pass
 
     def merge(self, ordered_filepaths: List[str]) -> str:
         """ Handles merging downloaded fragments into a resulting file.

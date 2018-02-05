@@ -11,6 +11,14 @@ This is the base qetch package.
 
 |
 
+qetch.auth
+----------
+
+.. automodule:: qetch.auth
+    :members:
+    :show-inheritance:
+
+
 qetch.content
 -------------
 
