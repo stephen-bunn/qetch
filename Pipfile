@@ -7,6 +7,12 @@ name = "pypi"
 
 [packages]
 
+furl = "*"
+requests = "*"
+blinker = "*"
+ujson = "*"
+
+
 [dev-packages]
 
 sphinx = "*"
@@ -17,6 +23,8 @@ pytest-cov = "*"
 "pytest-flake8" = "*"
 ptpython = "*"
 cprofilev = "*"
+"autopep8" = "*"
 
 
 [requires]
+
