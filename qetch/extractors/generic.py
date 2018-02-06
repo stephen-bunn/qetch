@@ -42,6 +42,7 @@ class GenericExtractor(BaseExtractor):
             source=source,
             fragments=[source],
             extractor=self,
+            extension=source.split('.')[-1],
             title=None,
             description=None,
             quality=0.0,

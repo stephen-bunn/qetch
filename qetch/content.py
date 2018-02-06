@@ -15,7 +15,7 @@ class Content(object):
 
     def __init__(
         self, uid: str, source: str, fragments: List[str],
-        extractor: BaseExtractor,
+        extractor: BaseExtractor, extension: str=None,
         title: str=None, description: str=None, quality: float=0.0,
         uploaded_by: str=None, uploaded_date: datetime.datetime=None,
         metadata: Dict[str, Any]={}
@@ -26,6 +26,7 @@ class Content(object):
         source (str): The source url given to the extractor.
         fragments (list[str]): A list of urls which represent the raw content.
         extractor (BaseExtractor): The extractor which discovered the content.
+        extension (str): The extension for the resulting file.
         title (str, optional): A title for the content.
         description (str, optional): A description for the content.
         quality (float, optional): A level of quality for the content in
@@ -39,10 +40,10 @@ class Content(object):
 
         (
             self.uid, self.source, self.fragments, self.extractor,
-            self.title, self.description, self.quality,
+            self.extension, self.title, self.description, self.quality,
             self.uploaded_by, self.uploaded_date, self.metadata,
         ) = (
-            uid, source, fragments, extractor,
+            uid, source, fragments, extractor, extension,
             title, description, quality,
             uploaded_by, uploaded_date, metadata
         )
@@ -55,7 +56,8 @@ class Content(object):
         """
 
         return (
-            f'<{self.__class__.__name__} ({self.quality}) "{self.uid}">'
+            f'<{self.__class__.__name__} ({self.quality}) '
+            f'"{self.uid}.{self.extension}">'
         )
 
     @property
@@ -126,6 +128,23 @@ class Content(object):
     def extractor(self, extractor: BaseExtractor):
         if isinstance(extractor, BaseExtractor):
             self._extractor = extractor
+
+    @property
+    def extension(self) -> str:
+        """ The extension of the resulting content.
+
+        Returns:
+            str: The extension for the resulting content.
+        """
+
+        if not hasattr(self, '_extension'):
+            self._extension = None
+        return self._extension
+
+    @extension.setter
+    def extension(self, extension: str):
+        if isinstance(extension, str) and len(extension) > 0:
+            self._extension = extension
 
     @property
     def title(self) -> str:

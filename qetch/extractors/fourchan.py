@@ -40,10 +40,12 @@ class FourChanExtractor(BaseExtractor):
             None,
             '{board}/{post[tim]}{post[ext]}',
             1.0,
+            None,
         ), (
             'thumb',
             '{board}/{post[tim]}s.jpg',
             0.0,
+            'jpg',
         ),
     ]
 
@@ -91,13 +93,15 @@ class FourChanExtractor(BaseExtractor):
         for post in data.get('posts', []):
             if 'md5' in post:
                 content_list = []
-                for (post_type, url_path, quality,) in self._content_configs:
+                for (post_type, url_path, quality, extension_type,) in \
+                        self._content_configs:
                     # build post_type depending on existing post_type
                     post_type = (
                         post_type
                         if post_type else
                         post['ext'].split('.')[-1]
                     )
+                    # TODO: looks overcomplicated, blow out to variable init
                     content_list.append(Content(
                         uid=(
                             f'{self.name}-{matchdict["board"]}-'
@@ -111,6 +115,11 @@ class FourChanExtractor(BaseExtractor):
                             )).url
                         ],
                         extractor=self,
+                        extension=(
+                            extension_type
+                            if extension_type else
+                            post['ext'].split('.')[-1]
+                        ),
                         title=post.get('filename'),
                         description=bs4.BeautifulSoup(
                             post.get('com', ''),
