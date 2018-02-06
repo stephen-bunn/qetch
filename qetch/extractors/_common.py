@@ -174,7 +174,7 @@ class BaseExtractor(abc.ABC):
                     raise exceptions.AuthenticationError((
                         f"no valid authentication found for "
                         f"{self.__class__!r}, received {auth!r} and no "
-                        f"registry entry"
+                        f"registry entry for key {self.__class__!r}"
                     ))
                 auth = registry[self.__class__]
                 del registry
