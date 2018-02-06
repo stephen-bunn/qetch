@@ -63,6 +63,13 @@ gfycat
     :undoc-members:
     :show-inheritance:
 
+imgur
+'''''
+.. automodule:: qetch.extractors.imgur
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 qetch.downloaders
 -----------------

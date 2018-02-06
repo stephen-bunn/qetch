@@ -2,3 +2,4 @@
 # MIT License <https://opensource.org/licenses/MIT>
 
 from .gfycat import (GfycatExtractor,)
+from .imgur import (ImgurExtractor,)

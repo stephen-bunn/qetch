@@ -20,7 +20,7 @@ class GfycatExtractor(BaseExtractor):
 
     name = 'gfycat'
     description = ('Site which hosts short high-quality video for sharing.')
-    authentication = AuthTypes.OAUTH
+    authentication = AuthTypes.NONE
     domains = ['gfycat.com']
     handles = {
         'basic': (
@@ -64,8 +64,7 @@ class GfycatExtractor(BaseExtractor):
             dict[str,...]: API data dictionary response
         """
 
-        query_url = furl.furl(self._api_base)
-        query_url.path.add(id)
+        query_url = furl.furl(self._api_base).add(path=id)
 
         response = self.session.get(query_url.url)
         if response.status_code not in (200,):
