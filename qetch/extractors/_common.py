@@ -170,13 +170,13 @@ class BaseExtractor(abc.ABC):
         if self.authentication != AuthTypes.NONE:
             if not isinstance(auth, tuple) or not len(auth) == 2:
                 registry = AuthRegistry()
-                if self.__class__ not in registry:
+                if self.name not in registry:
                     raise exceptions.AuthenticationError((
                         f"no valid authentication found for "
                         f"{self!r}, received {auth!r} and no "
-                        f"registry entry for key {self.__class__!r}"
+                        f"registry entry for key {self.name!r}"
                     ))
-                auth = registry[self.__class__]
+                auth = registry[self.name]
                 del registry
             self.authenticate(auth)
         for content in getattr(self, handle_method)(url, handle_match):

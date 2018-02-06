@@ -16,7 +16,7 @@ lxml = "*"
 click = "*"
 colorama = "*"
 tqdm = "*"
-halo = "*"
+yaspin = "*"
 
 
 [dev-packages]
