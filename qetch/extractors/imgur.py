@@ -30,7 +30,7 @@ class ImgurExtractor(BaseExtractor):
             r'(?:a|gallery)/(?P<id>[a-zA-Z0-9]+)/?$'
         ),
         'raw': (
-            r'^https?://(?www\.)?(?:[a-z]\.)imgur\.com/'
+            r'^https?://(?:www\.)?(?:[a-z]\.)imgur\.com/'
             r'(?P<id>[a-zA-Z0-9]+)\..*$'
         )
     }
