@@ -21,14 +21,14 @@ yaspin = "*"
 
 [dev-packages]
 
-sphinx = "*"
+Sphinx = "*"
 "flake8" = "*"
 pytest = "*"
 coverage = "*"
 pytest-cov = "*"
 "pytest-flake8" = "*"
 ptpython = "*"
-cprofilev = "*"
+CProfileV = "*"
 "autopep8" = "*"
 sphinx-autodoc-typehints = "*"
 
