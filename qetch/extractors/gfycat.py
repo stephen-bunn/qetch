@@ -52,16 +52,16 @@ class GfycatExtractor(BaseExtractor):
     }
 
     def _get_data(self, id: str) -> Dict[str, Any]:
-        """ Gets api data for a specific gfycat id.
+        """ Gets API data for a specific gfycat id.
 
         Args:
-            id (str): The id of the gfycat content to retrieve
+            id (str): The id of the gfycat content to retrieve.
 
         Raises:
-            exceptions.ExtractionError: When api call results in non 200 status
+            exceptions.ExtractionError: When API call results in non 200 status
 
         Returns:
-            dict[str,...]: API data dictionary response
+            dict[str,...]: API data dictionary response.
         """
 
         query_url = furl.furl(self._api_base).add(path=id)
