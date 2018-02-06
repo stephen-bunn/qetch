@@ -4,7 +4,7 @@
 import os
 import inspect
 import contextlib
-from typing import (Tuple, List,)
+from typing import (Tuple, List, TextIO,)
 
 from . import (
     __version__, utils, exceptions, extractors, downloaders,
@@ -14,6 +14,7 @@ from .auth import (AuthRegistry,)
 
 import tqdm
 import click
+import ujson
 import colorama
 from yaspin import (yaspin,)
 from yaspin.spinners import (Spinners,)
@@ -158,6 +159,11 @@ def cli_list(ctx: click.Context, handle_url: str=None):
     help='Auth config tuple (extractor.name, key/username, secret/password).'
 )
 @click.option(
+    '--auth-file', '-af',
+    type=click.File('r'), default=[], multiple=True,
+    help='Auth JSON config filepath.'
+)
+@click.option(
     'extract_all', '--extract-all', '-ea',
     is_flag=True, type=bool, default=False,
     help='Extract all qualities of content (otherwise extracts best quality).'
@@ -172,15 +178,22 @@ def cli_list(ctx: click.Context, handle_url: str=None):
 def cli_download(
     ctx: click.Context, url: str,
     max_fragments: int=None, max_connections: int=None,
-    auth: List[Tuple[str, str, str]]=None,
+    auth: List[Tuple[str, str, str]]=None, auth_file: List[TextIO]=None,
     extract_all: bool=None, output_format: str=None
 ):
     # TODO: add option to select range of content to download
-    # initialize authentication registry with provided configurations
-    AuthRegistry(**{
+    # initialize authentication registry with provided auth config files
+    auth_entries = {}
+    for file_obj in auth_file:
+        auth_entries.update(**ujson.load(file_obj))
+        file_obj.close()
+
+    # override auth_file entries with cli entries
+    auth_entries.update(**{
         entry[0]: (entry[1], entry[-1],)
         for entry in auth
     })
+    auth_registry = AuthRegistry(**auth_entries)
 
     url_repr = f'{CS.BRIGHT}{CF.CYAN}{url}{CS.RESET_ALL}'
     # determine appropriate extractor for a given url
@@ -252,6 +265,9 @@ def cli_download(
                     )
                 ) as spinner:
                     pass
+
+    # remove the authentication registry after downloads have completed
+    del auth_registry
 
 
 # add commands to base cli group
