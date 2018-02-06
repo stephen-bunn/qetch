@@ -1,17 +1,11 @@
 # Copyright (c) 2018 Stephen Bunn (stephen@bunn.io)
 # MIT License <https://opensource.org/licenses/MIT>
 
-import datetime
-from typing import (Any, Tuple, List, Dict, Match, Generator,)
+from typing import (List, Match, Generator,)
 
-from .. import (exceptions,)
 from ..auth import (AuthTypes,)
 from ..content import (Content,)
 from ._common import (BaseExtractor,)
-
-import bs4
-import furl
-import ujson
 
 
 class GenericExtractor(BaseExtractor):
