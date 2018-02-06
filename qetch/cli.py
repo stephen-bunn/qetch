@@ -74,8 +74,12 @@ def build_spinner(ctx: click.Context, text: str, silent: bool=True, **kwargs):
 )
 @click.option(
     '--spinner',
-    type=str, default='dots', help='Customize spinner type.',
-    show_default=True, callback=validate_spinner
+    type=str, default='dots', show_default=True,
+    help='Customize spinner type.', callback=validate_spinner
+)
+@click.option(
+    '--color/--no-color',
+    default=True, show_default=True, help='Enable pretty colors.'
 )
 @click.version_option(
     prog_name=__version__.__name__,
@@ -84,13 +88,20 @@ def build_spinner(ctx: click.Context, text: str, silent: bool=True, **kwargs):
 @click.pass_context
 def cli(
     ctx: click.Context,
-    quiet: bool=False, spinner: str='dots'
+    quiet: bool=None, spinner: str=None, color: bool=None
 ):
     """ The command-line interface to the Qetch framework.
     """
 
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_usage())
+
+    if not color:
+        # handle nulling of color values CF, CB, CS
+        for color_instance in (CF, CB, CS,):
+            for color_name in color_instance.__dict__.keys():
+                if color_name.isupper():
+                    setattr(color_instance, color_name, '')
 
     ctx.obj = ctx.params
 

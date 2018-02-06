@@ -110,4 +110,5 @@ venv.bak/
 .vscode/
 .pytest_cache/
 logs/
+Pipfile.lock
 main.py
