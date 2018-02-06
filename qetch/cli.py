@@ -138,7 +138,7 @@ def cli_list(ctx: click.Context, handle_url: str=None):
 )
 @click.option(
     '--max-connections', '-mc',
-    type=int, default=8, show_default=True,
+    type=int, default=1, show_default=True,
     help='The number of connections to allow per/fragment.'
 )
 @click.option(
