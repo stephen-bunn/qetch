@@ -13,6 +13,10 @@ blinker = "*"
 ujson = "*"
 "beautifulsoup4" = "*"
 lxml = "*"
+click = "*"
+colorama = "*"
+tqdm = "*"
+halo = "*"
 
 
 [dev-packages]
