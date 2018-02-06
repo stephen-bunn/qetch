@@ -62,7 +62,7 @@ class ImgurExtractor(BaseExtractor):
 
         Raises:
             exceptions.ExtractionError: When API call results in non 200 status
-        
+
         Returns:
             dict[str,....]: API data dictionary response
         """
@@ -207,16 +207,3 @@ class ImgurExtractor(BaseExtractor):
         self.session.headers.update({
             'authorization': f'Client-ID {auth[0]}'
         })
-
-    def merge(self, ordered_filepath: List[str]) -> str:
-        """ Handles merging downloaded fragments into a resulting file.
-
-        Args:
-            ordered_filepaths (list[str]): The list of ordered filepaths to \
-                downloaded fragments.
-
-        Returns:
-            str: The resulting merged file's filepath.
-        """
-
-        return (ordered_filepath[0] if len(ordered_filepath) > 0 else None)

@@ -6,8 +6,13 @@ import inspect
 from . import (extractors, downloaders,)
 from .content import (Content,)
 
-IGNORED_EXTRACTORS = [extractors._common.BaseExtractor]
-IGNORED_DOWNLOADERS = [downloaders._common.BaseDownloader]
+IGNORED_EXTRACTORS = (
+    extractors._common.BaseExtractor,
+    extractors.GenericExtractor,
+)
+IGNORED_DOWNLOADERS = (
+    downloaders._common.BaseDownloader,
+)
 
 
 def get_extractor(
@@ -45,6 +50,12 @@ def get_extractor(
                     if not init else
                     extractor_class(*args, **kwargs)
                 )
+    # if no extractor can handle, just return GenericExtractor
+    return (
+        extractors.GenericExtractor
+        if not init else
+        extractor_class.GenericExtractor(*args, **kwargs)
+    )
 
 
 def get_downloader(

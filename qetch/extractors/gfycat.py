@@ -145,25 +145,3 @@ class GfycatExtractor(BaseExtractor):
                     metadata=data
                 ))
         yield content_list
-
-    def authenticate(self, auth: Tuple[str, str]):
-        """ Handles authenticating the extractor if necessary.
-
-        Args:
-            auth (tuple[str, str]): The authentication tuple is available.
-        """
-
-        pass
-
-    def merge(self, ordered_filepaths: List[str]) -> str:
-        """ Handles merging downloaded fragments into a resulting file.
-
-        Args:
-            ordered_filepaths (list[str]): The list of ordered filepaths to \
-                downloaded fragments.
-
-        Returns:
-            str: The resulting merged file's filepath.
-        """
-
-        return (ordered_filepaths[0] if len(ordered_filepaths) > 0 else None)

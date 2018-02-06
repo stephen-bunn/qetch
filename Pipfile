@@ -11,6 +11,8 @@ furl = "*"
 requests = "*"
 blinker = "*"
 ujson = "*"
+"beautifulsoup4" = "*"
+lxml = "*"
 
 
 [dev-packages]

@@ -87,13 +87,27 @@ class BaseExtractor(abc.ABC):
 
         return cls.get_handle(url) is not None
 
-    @abc.abstractmethod
-    def merge(self, ordered_filepaths: List[str]) -> str:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
     def authenticate(self, auth: Tuple[str, str]):
-        raise NotImplementedError()
+        """ Handles authenticating the extractor if necessary.
+
+        Args:
+            auth (tuple[str, str]): The authentication tuple is available.
+        """
+
+        pass
+
+    def merge(self, ordered_filepath: List[str]) -> str:
+        """ Handles merging downloaded fragments into a resulting file.
+
+        Args:
+            ordered_filepaths (list[str]): The list of ordered filepaths to \
+                downloaded fragments.
+
+        Returns:
+            str: The resulting merged file's filepath.
+        """
+
+        return (ordered_filepath[0] if len(ordered_filepath) > 0 else None)
 
     def extract(
         self, url: str, auth: Tuple[str, str]=None
