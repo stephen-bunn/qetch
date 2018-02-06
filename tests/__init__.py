@@ -2,3 +2,4 @@
 # MIT License <https://opensource.org/licenses/MIT>
 
 from .test_test import (TestTest,)
+from .test_qetch import (TestQetch,)
