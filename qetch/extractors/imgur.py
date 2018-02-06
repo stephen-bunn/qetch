@@ -100,10 +100,7 @@ class ImgurExtractor(BaseExtractor):
         for url_type in self._content_urls:
             if url_type in data:
                 content_list.append(Content(
-                    uid=(
-                        f'{self.name}-{data["id"]}-'
-                        f'{data[url_type].split(".")[-1]}'
-                    ),
+                    uid=f'{self.name}-{data["id"]}-{url_type}',
                     source=source,
                     fragments=[data[url_type]],
                     extractor=self,
@@ -140,10 +137,7 @@ class ImgurExtractor(BaseExtractor):
                 for url_type in self._content_urls:
                     if url_type in image:
                         content_list.append(Content(
-                            uid=(
-                                f'{self.name}-{image["id"]}-'
-                                f'{image[url_type].split(".")[-1]}'
-                            ),
+                            uid=f'{self.name}-{image["id"]}-{url_type}',
                             source=source,
                             fragments=[image[url_type]],
                             extractor=self,
@@ -181,10 +175,7 @@ class ImgurExtractor(BaseExtractor):
         for url_type in self._content_urls:
             if url_type in data:
                 content_list.append(Content(
-                    uid=(
-                        f'{self.name}-{data["id"]}-'
-                        f'{data[url_type].split(".")[-1]}'
-                    ),
+                    uid=f'{self.name}-{data["id"]}-{url_type}',
                     source=source,
                     fragments=[data[url_type]],
                     extractor=self,

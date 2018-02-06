@@ -99,7 +99,7 @@ class FourChanExtractor(BaseExtractor):
                     post_type = (
                         post_type
                         if post_type else
-                        post['ext'].split('.')[-1]
+                        ''
                     )
                     # TODO: looks overcomplicated, blow out to variable init
                     content_list.append(Content(
