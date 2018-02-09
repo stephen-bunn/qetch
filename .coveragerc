@@ -8,6 +8,6 @@ show_missing=True
 omit=
     qetch/__init__.py
     qetch/__version__.py
-    qetch/const.py
-    qetch/meta/*
+    qetch/exceptions.py
+    qetch/extractors/*.py
     */_common.py

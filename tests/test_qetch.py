@@ -4,6 +4,7 @@
 import inspect
 
 import qetch
+from . import (extractors,)
 
 import pytest
 
@@ -16,10 +17,10 @@ class TestQetch(object):
         """ Test the names of all extractors.
         """
 
-        seen = {}
-        for (extractor_name, extractor_class,) in inspect.getmembers(
+        seen = set()
+        for (_, extractor_class,) in inspect.getmembers(
             qetch.extractors,
             predicate=inspect.isclass
         ):
             assert extractor_class.name not in seen
-            seen[extractor_class.name] = extractor_name
+            seen.add(extractor_class.name)
