@@ -32,4 +32,3 @@ class TestGfycatExtractor(ExtractorTest):
         'https://www.gfycat.com/gifs/detail/impracticalremotecentipede',
         'https://giant.gfycat.com/impracticalremotecentipede.mp4',
     ]
-
