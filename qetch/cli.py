@@ -26,6 +26,8 @@ CONTEXT_SETTINGS = dict(
 
 
 class TqdmDownload(tqdm.tqdm):
+    """ Custom tqdm progress bar for qetch downloads.
+    """
 
     def download_update(self, download_id: str, current: int, total: int):
         if self.total != total:
@@ -34,6 +36,21 @@ class TqdmDownload(tqdm.tqdm):
 
 
 def validate_spinner(ctx: click.Context, param: str, value: str) -> str:
+    """ Validates if a given spinner is a valid yaspin spinner.
+
+    Args:
+        ctx (click.Context): The context of the click instance.
+        param (str): The name of the click parameter.
+        value (str): The value of the click parameter.
+
+    Raises:
+        click.BadParameter:
+            - When the given spinner value is not a valid yaspin spinner.
+
+    Returns:
+        str: The value of the click parameter, if valid.
+    """
+
     spinner_names = list(Spinners._asdict().keys())
     if value not in spinner_names:
         raise click.BadParameter((
@@ -44,9 +61,31 @@ def validate_spinner(ctx: click.Context, param: str, value: str) -> str:
 
 @contextlib.contextmanager
 def build_spinner(ctx: click.Context, text: str, silent: bool=True, **kwargs):
+    """ Builds a quick yaspin spinner.
+
+    Decorators:
+        contextlib.contextmanager
+
+    Args:
+        ctx (click.Context): The context of the click instance.
+        text (str): The text to display for the spinner.
+        kwargs (dict[str,....]): Any named arguments for the spinner
+        silent (bool, optional): Defaults to True. If True does not raise any
+            exceptions that occur.
+
+    Raises:
+        Exception:
+            - If silent is False and any exception occurs during spinner.
+
+    Yields:
+        yaspin.yaspin: The spinner instance
+    """
+
+    # dont allow spinner if quiet flat is set
     if ctx.obj.get('quiet', False):
         return contextlib.ExitStack()
 
+    # update spinner kwargs
     kwargs.update({
         'spinner': getattr(
             Spinners,
@@ -54,12 +93,18 @@ def build_spinner(ctx: click.Context, text: str, silent: bool=True, **kwargs):
         ),
         'right': ctx.params.get('right', False)
     })
+    # remove text from kwargs because it will conflict with the passed text
+    if 'text' in kwargs:
+        del kwargs['text']
     spinner = yaspin(text=text, **kwargs)
+
     try:
         spinner.start()
         yield spinner
+        # display ok status message on success
         spinner.ok(f'{CS.BRIGHT}{CF.GREEN}✔{CS.RESET_ALL} ')
     except Exception as exc:
+        # display fail status message on failure
         spinner.text += f' {CS.DIM}[{exc}]{CS.RESET_ALL}'
         spinner.fail(f'{CS.BRIGHT}{CF.RED}✗{CS.RESET_ALL} ')
         if not silent:
