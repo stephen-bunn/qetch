@@ -162,21 +162,18 @@ def cli(
 )
 @click.pass_context
 def cli_list(ctx: click.Context, handle_url: str=None):
-    # TODO: clean up extractor listing between different options
-    # handle listing extractors that can handle a url
-    if isinstance(handle_url, str) and len(handle_url) > 0:
-        for (extractor_name, extractor_class,) in \
-                inspect.getmembers(extractors, predicate=inspect.isclass):
-            if extractor_class not in IGNORED_EXTRACTORS:
+    for (extractor_name, extractor_class,) in \
+            inspect.getmembers(extractors, predicate=inspect.isclass):
+        if extractor_class not in IGNORED_EXTRACTORS:
+            # handle listing extractors that can handle a url
+            if isinstance(handle_url, str) and len(handle_url) > 0:
                 with build_spinner(
                     ctx, f'{CS.BRIGHT}{extractor_class.name}{CS.RESET_ALL}'
                 ):
                     if not extractor_class.can_handle(handle_url):
                         raise Exception((f'cannot handle'))
-    else:
-        for (extractor_name, extractor_class,) in \
-                inspect.getmembers(extractors, predicate=inspect.isclass):
-            if extractor_class not in IGNORED_EXTRACTORS:
+            # just display extractors
+            else:
                 print((
                     f'{CS.BRIGHT}{extractor_name}{CS.RESET_ALL} '
                     f'{CS.DIM}({extractor_class.name}){CS.RESET_ALL}'
