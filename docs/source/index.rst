@@ -1,8 +1,6 @@
 =====
-qetch
+Qetch
 =====
-A framework for extracting and downloading content from various sites.
-
 
 .. image:: https://img.shields.io/pypi/pyversions/qetch.svg
    :target: https://pypi.org/project/qetch/
@@ -46,6 +44,7 @@ Documentation
     :maxdepth: 2
 
     getting-started
+    project-structure
     changelog
 
 
