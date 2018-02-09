@@ -96,30 +96,29 @@ class FourChanExtractor(BaseExtractor):
                 for (post_type, url_path, quality, extension_type,) in \
                         self._content_configs:
                     # build post_type depending on existing post_type
-                    post_type = (
-                        post_type
-                        if post_type else
-                        ''
+                    post_type = (post_type if post_type else '')
+                    content_uid = (
+                        f'{self.name}-{matchdict["board"]}-'
+                        f'{matchdict["id"]}-{post["tim"]}-{post_type}'
                     )
-                    # TODO: looks overcomplicated, blow out to variable init
+                    content_fragments = [
+                        furl.furl(self._img_base).add(path=url_path.format(
+                            board=matchdict['board'],
+                            post=post
+                        )).url
+                    ]
+                    content_extension = (
+                        extension_type
+                        if extension_type else
+                        post['ext'].split('.')[-1]
+                    )
+
                     content_list.append(Content(
-                        uid=(
-                            f'{self.name}-{matchdict["board"]}-'
-                            f'{matchdict["id"]}-{post["tim"]}-{post_type}'
-                        ),
+                        uid=content_uid,
                         source=source,
-                        fragments=[
-                            furl.furl(self._img_base).add(path=url_path.format(
-                                board=matchdict['board'],
-                                post=post
-                            )).url
-                        ],
+                        fragments=content_fragments,
                         extractor=self,
-                        extension=(
-                            extension_type
-                            if extension_type else
-                            post['ext'].split('.')[-1]
-                        ),
+                        extension=content_extension,
                         title=post.get('filename'),
                         description=bs4.BeautifulSoup(
                             post.get('com', ''),
