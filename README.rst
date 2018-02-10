@@ -27,10 +27,6 @@ qetch
    :target: https://qetch.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
-.. image:: https://requires.io/github/stephen-bunn/qetch/requirements.svg?branch=master
-   :target: https://requires.io/github/stephen-bunn/qetch/requirements/?branch=master
-   :alt: Requirements Status
-
 .. image:: https://pyup.io/repos/github/stephen-bunn/qetch/shield.svg
    :target: https://pyup.io/repos/github/stephen-bunn/qetch/
    :alt: Updates
