@@ -37,6 +37,11 @@ Qetch
    :alt: Say Thanks
 
 
+|
+| A framework for site content extractors and downloaders.
+| A WIP migration from `youtube-dl <https://rg3.github.io/youtube-dl/>`_.
+
+
 Documentation
 -------------
 

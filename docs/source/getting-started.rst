@@ -6,7 +6,7 @@ Getting Started
     It's called "Qetch" because I couldn't think of anything better...
 
 I started this because I needed a way of extracting and downloading raw content from just a user dropping in a url.
-The issue with current solutions is that they have an unintuitive API and an overcomplicated implementation (no offense intended, I really appreciate the work that went into the curernt solutions).
+The issue with current solutions is that they have an unintuitive API and an overcomplicated implementation (no offense intended, I really appreciate the work that went into the current solutions).
 
 *But I'm a stickler* and wanted a cleaner more modular way of building extractors and quicker downloaders; also something that doesn't strive to be "Pure Python" **because pure Python isn't real Python**.
 

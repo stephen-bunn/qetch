@@ -8,3 +8,7 @@ Changelog
 
 *unreleased*
 ------------
+* added basic project structure migration from previous proof-of-concepts
+* enhanced documentation to make it readable
+* fixed multi-connection threaded progress reporting
+* removed broken WIP extractors from previous repositories
