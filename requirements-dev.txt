@@ -7,4 +7,4 @@ pytest-flake8
 ptpython
 cprofilev
 autopep8
-sphinx-autodoc-typehints
+sphinx-autodoc-typehints==1.2.4
