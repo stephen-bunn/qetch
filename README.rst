@@ -47,12 +47,6 @@ A framework for extracting and downloading content from various sites.
 * Documentation: https://qetch.readthedocs.io
 
 
-Features
---------
-
-.. TODO: Outline project features
-
-
 Credits
 ---------
 
