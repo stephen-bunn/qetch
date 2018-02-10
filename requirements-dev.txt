@@ -2,7 +2,7 @@ sphinx
 flake8
 pytest
 coverage
-pytest-cov
+pytest-cov==2.5.1
 pytest-flake8
 ptpython
 cprofilev
