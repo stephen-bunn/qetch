@@ -5,6 +5,6 @@ coverage
 pytest-cov
 pytest-flake8
 ptpython
-cprofilev
+cprofilev==1.0.7
 autopep8
 sphinx-autodoc-typehints
