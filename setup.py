@@ -9,6 +9,22 @@ import setuptools
 
 CURDIR = os.path.abspath(os.path.dirname(__file__))
 REQUIRES = [
+    'beautifulsoup4',
+    'blinker',
+    'certifi',
+    'chardet',
+    'click',
+    'colorama',
+    'furl',
+    'idna',
+    'lxml',
+    'orderedmultidict',
+    'requests',
+    'six',
+    'tqdm',
+    'ujson',
+    'urllib3',
+    'yaspin',
 ]
 TEST_REQUIRES = [
     'pytest',
