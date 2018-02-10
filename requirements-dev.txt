@@ -6,5 +6,5 @@ pytest-cov
 pytest-flake8
 ptpython
 cprofilev
-autopep8
+autopep8==1.3.4
 sphinx-autodoc-typehints
