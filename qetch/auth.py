@@ -51,6 +51,11 @@ class AuthRegistry(dict):
         self.__dict__.update(**kwargs)
 
     def __setitem__(self, key: Any, value: Any):
+        if not isinstance(key, str) or len(key) <= 0:
+            raise ValueError((
+                f"{self.__class__!r} only allows non-zero length strings as "
+                f"keys, received {key!r}"
+            ))
         self.__dict__[key] = value
 
     def __getitem__(self, key: Any) -> Any:
@@ -63,7 +68,7 @@ class AuthRegistry(dict):
         return (
             f'<{self.__class__.__name__} ({hex(id(self))}) '
             f'"{len(self.__dict__)} entr'
-            f'{"ies" if len(self.__dict__) > 1 else "y"}">'
+            f'{"y" if len(self.__dict__) == 1 else "ies"}">'
         )
 
     def __len__(self):

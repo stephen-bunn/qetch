@@ -167,8 +167,10 @@ class BaseExtractor(abc.ABC):
                 f"no handled method named {handle_method!r} is implemented "
                 f"for {self!r}"
             ))
+
         if self.authentication != AuthTypes.NONE:
-            if not isinstance(auth, tuple) or not len(auth) == 2:
+            if not isinstance(auth, tuple):
+                # try to get authentication entry from registry
                 registry = AuthRegistry()
                 if self.name not in registry:
                     raise exceptions.AuthenticationError((
@@ -178,6 +180,16 @@ class BaseExtractor(abc.ABC):
                     ))
                 auth = registry[self.name]
                 del registry
+
+            # validate authentication format
+            if len(auth) != len(self.authentication.value):
+                raise exceptions.AuthenticationError((
+                    f"invalid authentication format for {self!r}, got "
+                    f"values {auth!r} but expects format "
+                    f"{self.authentication.value!r}"
+                ))
             self.authenticate(auth)
+
+        # handle extracting content using appropriate extraction method
         for content in getattr(self, handle_method)(url, handle_match):
             yield content
