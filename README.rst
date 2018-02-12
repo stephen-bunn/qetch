@@ -1,7 +1,9 @@
-=====
-qetch
-=====
+.. image:: https://github.com/stephen-bunn/qetch/raw/master/docs/source/_static/logo.png
+    :alt: Qetch Logo
+    :width: 800
+    :align: center
 
+|
 
 .. image:: https://img.shields.io/pypi/pyversions/qetch.svg
    :target: https://pypi.org/project/qetch/
