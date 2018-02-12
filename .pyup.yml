@@ -1,0 +1,9 @@
+update: all
+pin: True
+branch: master
+schedule: "every week"
+search: True
+assignees:
+ - stephen-bunn
+branch_prefix: pyup/
+close_prs: True
