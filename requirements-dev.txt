@@ -1,6 +1,6 @@
-sphinx==1.6.7
+sphinx==1.7.0
 flake8==3.5.0
-sphinx==1.6.7
+sphinx==1.7.0
 flake8==3.5.0
 pytest==3.4.0
 coverage==4.5
