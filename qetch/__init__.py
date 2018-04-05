@@ -54,7 +54,7 @@ def get_extractor(
     return (
         extractors.GenericExtractor
         if not init else
-        extractor_class.GenericExtractor(*args, **kwargs)
+        extractor_class(*args, **kwargs)
     )
 
 
