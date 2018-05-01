@@ -6,7 +6,7 @@ import pathlib
 import importlib.util
 
 
-def normalize_path(filepath: str, expand_vars: bool=False) -> str:
+def normalize_path(filepath: str, expand_vars: bool = False) -> str:
     """ Fully normalize a given filepath.
 
     Args:

@@ -3,21 +3,15 @@
 
 import inspect
 
-from . import (extractors, downloaders,)
-from .content import (Content,)
+from . import extractors, downloaders
+from .content import Content
 
-IGNORED_EXTRACTORS = (
-    extractors._common.BaseExtractor,
-    extractors.GenericExtractor,
-)
-IGNORED_DOWNLOADERS = (
-    downloaders._common.BaseDownloader,
-)
+IGNORED_EXTRACTORS = (extractors._common.BaseExtractor, extractors.GenericExtractor)
+IGNORED_DOWNLOADERS = (downloaders._common.BaseDownloader,)
 
 
 def get_extractor(
-    url: str, init: bool=False,
-    *args, **kwargs
+    url: str, init: bool = False, *args, **kwargs
 ) -> extractors._common.BaseExtractor:
     """ Gets the first extractor that can handle a given url.
 
@@ -39,28 +33,22 @@ def get_extractor(
         <GfycatExtractor "gfycat">
     """
 
-    for (extractor_name, extractor_class,) in inspect.getmembers(
-        extractors,
-        predicate=inspect.isclass
+    for (extractor_name, extractor_class) in inspect.getmembers(
+        extractors, predicate=inspect.isclass
     ):
         if extractor_class not in IGNORED_EXTRACTORS:
             if extractor_class.can_handle(url):
                 return (
-                    extractor_class
-                    if not init else
-                    extractor_class(*args, **kwargs)
+                    extractor_class if not init else extractor_class(*args, **kwargs)
                 )
     # if no extractor can handle, just return GenericExtractor
     return (
-        extractors.GenericExtractor
-        if not init else
-        extractor_class(*args, **kwargs)
+        extractors.GenericExtractor if not init else extractor_class(*args, **kwargs)
     )
 
 
 def get_downloader(
-    content: Content, init: bool=False,
-    *args, **kwargs
+    content: Content, init: bool = False, *args, **kwargs
 ) -> downloaders._common.BaseDownloader:
     """ Gets the first downloader that can handle a given content.
 
@@ -84,14 +72,11 @@ def get_downloader(
         <HTTPDownloader at 0xABCDEF1234567890>
     """
 
-    for (downloader_name, downloader_class,) in inspect.getmembers(
-        downloaders,
-        predicate=inspect.isclass
+    for (downloader_name, downloader_class) in inspect.getmembers(
+        downloaders, predicate=inspect.isclass
     ):
         if downloader_class not in IGNORED_DOWNLOADERS:
             if downloader_class.can_handle(content):
                 return (
-                    downloader_class
-                    if not init else
-                    downloader_class(*args, **kwargs)
+                    downloader_class if not init else downloader_class(*args, **kwargs)
                 )

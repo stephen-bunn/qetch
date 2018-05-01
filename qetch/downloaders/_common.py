@@ -8,14 +8,15 @@ import time
 import uuid
 import shutil
 import itertools
-from typing import (Any, List, Tuple, Callable,)
-from tempfile import (TemporaryDirectory,)
-from concurrent.futures import (ThreadPoolExecutor,)
+from typing import Any, List, Tuple, Callable
+from tempfile import TemporaryDirectory
+from concurrent.futures import ThreadPoolExecutor
 
-from .. import (__version__,)
-from ..content import (Content,)
-
+import attr
 import blinker
+
+from .. import __version__
+from ..content import Content
 
 
 class DownloadState(enum.Enum):
@@ -28,12 +29,13 @@ class DownloadState(enum.Enum):
         - ``FINISHED``: indicates the download is finished (successfully)
     """
 
-    STOPPED = 'stopped'
-    RUNNING = 'running'
-    PREPARING = 'preparing'
-    FINISHED = 'finished'
+    STOPPED = "stopped"
+    RUNNING = "running"
+    PREPARING = "preparing"
+    FINISHED = "finished"
 
 
+@attr.s
 class BaseDownloader(abc.ABC):
     """ The base abstract base downloader.
     `All downloaders must extend from this class.`
@@ -41,23 +43,8 @@ class BaseDownloader(abc.ABC):
 
     on_progress = blinker.Signal()
 
-    @property
-    def download_state(self):
-        """ dict[str,DownloadState]: The download state dictionary.
-        """
-
-        if not hasattr(self, '_download_state'):
-            self._download_state = {}
-        return self._download_state
-
-    @property
-    def progress_store(self):
-        """ dict[str,int]: The downloaded content size for progress reporting.
-        """
-
-        if not hasattr(self, '_progress_store'):
-            self._progress_store = {}
-        return self._progress_store
+    download_state = attr.ib(type=dict, default={}, init=False, repr=False)
+    progress_store = attr.ib(type=dict, default={}, init=False, repr=False)
 
     @abc.abstractclassmethod
     def can_handle(cls, content: Content):
@@ -82,20 +69,19 @@ class BaseDownloader(abc.ABC):
                 ``(start, end)`` byte ranges.
         """
 
-        (start, end,) = itertools.tee(list(range(
-            0, content_length,
-            (content_length // max_connections)
-        )) + [content_length])
+        (start, end) = itertools.tee(
+            list(range(0, content_length, (content_length // max_connections)))
+            + [content_length]
+        )
         next(end, None)
         ranges = list(zip(start, end))
         if len(ranges) > max_connections:
-            ranges[-2] = (ranges[-2][0], ranges[-1][-1],)
+            ranges[-2] = (ranges[-2][0], ranges[-1][-1])
             del ranges[-1]
         return ranges
 
     def handle_progress(
-        self, download_id: str, content_length: int,
-        update_delay: float=0.1
+        self, download_id: str, content_length: int, update_delay: float = 0.1
     ):
         """ The progress reporting handler.
 
@@ -118,26 +104,30 @@ class BaseDownloader(abc.ABC):
                     self.on_progress.send(
                         download_id,
                         current=self.progress_store[download_id],
-                        total=content_length
+                        total=content_length,
                     )
-                elif self.progress_store[download_id] >= content_length or \
-                        self.download_state[download_id] == \
-                        DownloadState.STOPPED:
+                elif self.progress_store[
+                    download_id
+                ] >= content_length or self.download_state[
+                    download_id
+                ] == DownloadState.STOPPED:
                     break
 
                 time.sleep(update_delay)
         finally:
             del self.progress_store[download_id]
             self.on_progress.send(
-                download_id,
-                current=content_length,
-                total=content_length
+                download_id, current=content_length, total=content_length
             )
 
     def download(
-        self, content: Content, to_path: str,
-        max_fragments: int=1, max_connections: int=8,
-        progress_hook: Callable[[Any], None]=None, update_delay: float=0.1,
+        self,
+        content: Content,
+        to_path: str,
+        max_fragments: int = 1,
+        max_connections: int = 8,
+        progress_hook: Callable[[Any], None] = None,
+        update_delay: float = 0.1,
     ) -> str:
         """ The simplified download method.
 
@@ -204,41 +194,41 @@ class BaseDownloader(abc.ABC):
             $HOME/Downloads/saved_content.mp4
         """
 
-        assert (max_fragments > 0), (
-            f"'max_fragments' must be at least 1, received {max_fragments!r}"
-        )
-        assert (max_connections > 0), (
-            f"'max_connections' must be at least 1, received "
-            f"{max_connections!r}"
+        assert (
+            max_fragments > 0
+        ), f"'max_fragments' must be at least 1, received {max_fragments!r}"
+        assert max_connections > 0, (
+            f"'max_connections' must be at least 1, received " f"{max_connections!r}"
         )
 
         # generate unique download id for state & progress syncing
         download_id = str(uuid.uuid4())
         with TemporaryDirectory(
-            prefix=f'{__version__.__name__}[{download_id}]-',
+            prefix=f"{__version__.__name__}[{download_id}]-"
         ) as temporary_dir:
             # +1 worker is for progress handler
-            with ThreadPoolExecutor(
-                max_workers=(max_fragments + 1)
-            ) as executor:
+            with ThreadPoolExecutor(max_workers=(max_fragments + 1)) as executor:
                 if callable(progress_hook):
                     self.on_progress.connect(progress_hook)
                     executor.submit(
                         self.handle_progress,
                         *(download_id, content.get_size()),
-                        **{'update_delay': update_delay}
+                        **{"update_delay": update_delay},
                     )
 
                 download_futures = []
-                for (fragment_idx, fragment,) in enumerate(content.fragments):
-                    download_futures.append(executor.submit(
-                        self.handle_download,
-                        *(
-                            download_id, fragment,
-                            os.path.join(temporary_dir, str(fragment_idx))
-                        ),
-                        **{'max_connections': max_connections}
-                    ))
+                for (fragment_idx, fragment) in enumerate(content.fragments):
+                    download_futures.append(
+                        executor.submit(
+                            self.handle_download,
+                            *(
+                                download_id,
+                                fragment,
+                                os.path.join(temporary_dir, str(fragment_idx)),
+                            ),
+                            **{"max_connections": max_connections},
+                        )
+                    )
 
                 # FIXME: handle KeyboardInterrupt with parent thread correctly
                 try:
@@ -251,10 +241,9 @@ class BaseDownloader(abc.ABC):
 
                 # apply content extractors merge and move result (one step)
                 shutil.move(
-                    content.extractor.merge([
-                        future.result()
-                        for future in download_futures
-                    ]),
-                    to_path
+                    content.extractor.merge(
+                        [future.result() for future in download_futures]
+                    ),
+                    to_path,
                 )
                 return to_path
