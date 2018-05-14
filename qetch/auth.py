@@ -22,9 +22,15 @@ class AuthTypes(enum.Enum):
 
 
 class AuthRegistry(CIMultiDict):
+    """Authentication registry.
 
+    Employes the borg pattern which allows shared state between instances.
+    """
     __shared_state = {}
 
     def __init__(self, *args, **kwargs):
+        """Initializes the authentication registry.
+        """
+
         self.__dict__ = self.__shared_state
         super().__init__(self, *args, **kwargs)
