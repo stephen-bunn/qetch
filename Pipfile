@@ -23,6 +23,7 @@ black = "*"
 isort = "*"
 ptpython = "*"
 pytest-sugar = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.6"
