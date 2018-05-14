@@ -9,7 +9,7 @@ from ..content import Content
 
 
 class GenericExtractor(BaseExtractor):
-    """ A basic generic extractor that simply extracts to the same url.
+    """A basic generic extractor that simply extracts to the same url.
     """
 
     name = "generic"
@@ -24,7 +24,7 @@ class GenericExtractor(BaseExtractor):
     def handle_all(
         self, source: str, match: Match
     ) -> Generator[List[Content], None, None]:
-        """ Handles ``all`` links to any media.
+        """Handles ``all`` links to any media.
 
         Args:
             source (str): The source url

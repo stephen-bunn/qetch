@@ -20,7 +20,7 @@ from ..content import Content
 
 
 class DownloadState(enum.Enum):
-    """ An enum of allowed download states.
+    """An enum of allowed download states.
 
     Values:
         - ``STOPPED``: indicates the download is stopped (error occured)
@@ -37,7 +37,7 @@ class DownloadState(enum.Enum):
 
 @attr.s
 class BaseDownloader(abc.ABC):
-    """ The base abstract base downloader.
+    """The base abstract base downloader.
     `All downloaders must extend from this class.`
     """
 
@@ -57,7 +57,7 @@ class BaseDownloader(abc.ABC):
     def _calc_ranges(
         self, content_length: int, max_connections: int
     ) -> List[Tuple[int, int]]:
-        """ Calculates byte ranges given a content size and the number of \
+        """Calculates byte ranges given a content size and the number of \
             allowed connections.
 
         Args:
@@ -83,7 +83,7 @@ class BaseDownloader(abc.ABC):
     def handle_progress(
         self, download_id: str, content_length: int, update_delay: float = 0.1
     ):
-        """ The progress reporting handler.
+        """The progress reporting handler.
 
         Args:
             download_id (str): The unique id of the download request.
@@ -129,7 +129,7 @@ class BaseDownloader(abc.ABC):
         progress_hook: Callable[[Any], None] = None,
         update_delay: float = 0.1,
     ) -> str:
-        """ The simplified download method.
+        """The simplified download method.
 
         Note:
             The ``max_fragments`` and ``max_connections`` rules imply that

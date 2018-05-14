@@ -13,14 +13,14 @@ from ..content import Content
 
 @attr.s
 class HTTPDownloader(BaseDownloader):
-    """ The downloader for HTTP served content.
+    """The downloader for HTTP served content.
     """
 
     _session = HTMLSession()
 
     @classmethod
     def can_handle(cls, content: Content) -> bool:
-        """ Determines if a given content can be handled by this downloader.
+        """Determines if a given content can be handled by this downloader.
 
         Args:
             content (Content): The content the check.
@@ -43,7 +43,7 @@ class HTTPDownloader(BaseDownloader):
         end: int,
         chunk_size: int = 1024,
     ):
-        """ Handles downloading a specific range of bytes for a url.
+        """Handles downloading a specific range of bytes for a url.
 
         Args:
             download_id (str): The unique id of the download request.
@@ -72,7 +72,7 @@ class HTTPDownloader(BaseDownloader):
     def handle_download(
         self, download_id: str, url: str, to_path: str, max_connections: int = 8
     ):
-        """ Handles downloading a specific url.
+        """Handles downloading a specific url.
 
         Note:
             ``max_connections`` defaults to 8 because many content hosting \

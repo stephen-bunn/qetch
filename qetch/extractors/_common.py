@@ -15,7 +15,7 @@ from ..auth import AuthTypes, AuthRegistry
 
 @attr.s
 class BaseExtractor(abc.ABC):
-    """ The base extractor.
+    """The base extractor.
     `All extractors should extend this.`
     """
 
@@ -41,7 +41,7 @@ class BaseExtractor(abc.ABC):
 
     @property
     def session(self):
-        """ The default session for the extractor.
+        """The default session for the extractor.
 
         Returns:
             HTMLSession: The default session for the extractor.
@@ -53,7 +53,7 @@ class BaseExtractor(abc.ABC):
 
     @classmethod
     def get_handle(cls, url: str) -> Tuple[str, Match]:
-        """ Gets the handle match for a given url.
+        """Gets the handle match for a given url.
 
         Args:
             url (str): The url to get the handle match for.
@@ -69,7 +69,7 @@ class BaseExtractor(abc.ABC):
 
     @classmethod
     def can_handle(cls, url: str):
-        """ Determines if an extractor can handle a url.
+        """Determines if an extractor can handle a url.
 
         Args:
             url (str): The url to check
@@ -81,7 +81,7 @@ class BaseExtractor(abc.ABC):
         return cls.get_handle(url) is not None
 
     def authenticate(self, auth: Tuple[str, str]):
-        """ Handles authenticating the extractor if necessary.
+        """Handles authenticating the extractor if necessary.
 
         Args:
             auth (tuple[str, str]): The authentication tuple is available.
@@ -90,7 +90,7 @@ class BaseExtractor(abc.ABC):
         pass
 
     def merge(self, ordered_filepaths: List[str]) -> str:
-        """ Handles merging downloaded fragments into a resulting file.
+        """Handles merging downloaded fragments into a resulting file.
 
         Args:
             ordered_filepaths (list[str]): The list of ordered filepaths to \
@@ -105,7 +105,7 @@ class BaseExtractor(abc.ABC):
     def extract(
         self, url: str, auth: Tuple[str, str] = None
     ) -> Generator[List[Any], None, None]:
-        """ Extracts lists of content from a url.
+        """Extracts lists of content from a url.
 
         Note:
             When an extractor can handle a url with a given

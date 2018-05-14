@@ -12,7 +12,7 @@ from .extractors._common import BaseExtractor
 
 @attr.s
 class Content(object):
-    """ The resulting content instance yielded by extractors.
+    """The resulting content instance yielded by extractors.
 
     Attributes:
         uid (str): The unique id for the discovered content.

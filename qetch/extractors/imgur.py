@@ -15,7 +15,7 @@ from ..content import Content
 
 
 class ImgurExtractor(BaseExtractor):
-    """ The extractor for links to media from ``imgur.com``.
+    """The extractor for links to media from ``imgur.com``.
     """
 
     name = "imgur"
@@ -39,7 +39,7 @@ class ImgurExtractor(BaseExtractor):
     def _get_data(
         self, id: str, is_album: bool = False, is_raw: bool = False
     ) -> Dict[str, Any]:
-        """ Gets API data for a specific imgur id.
+        """Gets API data for a specific imgur id.
 
         Args:
             id (str): The id of the imgur content to retrieve.
@@ -74,7 +74,7 @@ class ImgurExtractor(BaseExtractor):
     def handle_basic(
         self, source: str, match: Match
     ) -> Generator[List[Content], None, None]:
-        """ Handles ``basic`` links to imgur media.
+        """Handles ``basic`` links to imgur media.
 
         Args:
             source (str): The source url
@@ -111,7 +111,7 @@ class ImgurExtractor(BaseExtractor):
     def handle_album(
         self, source: str, match: Match
     ) -> Generator[List[Content], None, None]:
-        """ Handles ``album`` links to imgur media.
+        """Handles ``album`` links to imgur media.
 
         Args:
             source (str): The source url
@@ -153,7 +153,7 @@ class ImgurExtractor(BaseExtractor):
     def handle_raw(
         self, source: str, match: Match
     ) -> Generator[List[Content], None, None]:
-        """ Handles ``raw`` links to imgur media.
+        """Handles ``raw`` links to imgur media.
 
         Args:
             source (str): The source url
@@ -188,7 +188,7 @@ class ImgurExtractor(BaseExtractor):
         yield content_list
 
     def authenticate(self, auth: Tuple[str, str]):
-        """ Handles authenticating the extractor if necessary.
+        """Handles authenticating the extractor if necessary.
 
         Args:
             auth (tuple[str, str]): The authentication tuple is available.

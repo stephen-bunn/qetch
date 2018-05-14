@@ -16,7 +16,7 @@ from ..content import Content
 
 
 class FourChanExtractor(BaseExtractor):
-    """ The extractor for links to media from ``4chan.org``.
+    """The extractor for links to media from ``4chan.org``.
     """
 
     name = "4chan"
@@ -42,7 +42,7 @@ class FourChanExtractor(BaseExtractor):
     ]
 
     def _get_data(self, board: str, id: str) -> Dict[str, Any]:
-        """ Gets API data for a specific 4chan board and thread id.
+        """Gets API data for a specific 4chan board and thread id.
 
         Args:
             board (str): The id of the passed board
@@ -69,7 +69,7 @@ class FourChanExtractor(BaseExtractor):
     def handle_thread(
         self, source: str, match: Match
     ) -> Generator[List[Content], None, None]:
-        """ Handles ``thread`` links to 4chan media.
+        """Handles ``thread`` links to 4chan media.
 
         Args:
             source (str): The source url
@@ -125,7 +125,7 @@ class FourChanExtractor(BaseExtractor):
     def handle_raw(
         self, source: str, match: Match
     ) -> Generator[List[Content], None, None]:
-        """ Handles ``raw`` links to 4chan media.
+        """Handles ``raw`` links to 4chan media.
 
         Args:
             source (str): The source url

@@ -7,7 +7,7 @@ import importlib.util
 
 
 def normalize_path(filepath: str, expand_vars: bool = False) -> str:
-    """ Fully normalize a given filepath.
+    """Fully normalize a given filepath.
 
     Args:
         filepath (str): The filepath to normalize.
@@ -25,7 +25,7 @@ def normalize_path(filepath: str, expand_vars: bool = False) -> str:
 
 
 def is_importable(name: str) -> bool:
-    """ Determines if a given module name can be imported.
+    """Determines if a given module name can be imported.
 
     Args:
         name (str): The name of the module to check.

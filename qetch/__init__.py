@@ -13,7 +13,7 @@ IGNORED_DOWNLOADERS = (downloaders._common.BaseDownloader,)
 def get_extractor(
     url: str, init: bool = False, *args, **kwargs
 ) -> extractors._common.BaseExtractor:
-    """ Gets the first extractor that can handle a given url.
+    """Gets the first extractor that can handle a given url.
 
     Args:
         url (str): The url that needs to be extracted
@@ -50,7 +50,7 @@ def get_extractor(
 def get_downloader(
     content: Content, init: bool = False, *args, **kwargs
 ) -> downloaders._common.BaseDownloader:
-    """ Gets the first downloader that can handle a given content.
+    """Gets the first downloader that can handle a given content.
 
     Args:
         content (Content): The content that needs to be downloaded

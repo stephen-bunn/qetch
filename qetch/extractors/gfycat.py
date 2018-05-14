@@ -15,7 +15,7 @@ from ..content import Content
 
 
 class GfycatExtractor(BaseExtractor):
-    """ The extractor for links to media from ``gfycat.com``.
+    """The extractor for links to media from ``gfycat.com``.
     """
 
     name = "gfycat"
@@ -52,7 +52,7 @@ class GfycatExtractor(BaseExtractor):
     _quality_map = {"mp4Url": 1.0, "webmUrl": 0.5, "gifUrl": 0.25}
 
     def _get_data(self, id: str) -> Dict[str, Any]:
-        """ Gets API data for a specific gfycat id.
+        """Gets API data for a specific gfycat id.
 
         Args:
             id (str): The id of the gfycat content to retrieve.
@@ -79,7 +79,7 @@ class GfycatExtractor(BaseExtractor):
     def handle_raw(
         self, source: str, match: Match
     ) -> Generator[List[Content], None, None]:
-        """ Handles ``raw`` links to gfycat media.
+        """Handles ``raw`` links to gfycat media.
 
         Args:
             source (str): The source url
@@ -116,7 +116,7 @@ class GfycatExtractor(BaseExtractor):
     def handle_basic(
         self, source: str, match: Match
     ) -> Generator[List[Content], None, None]:
-        """ Handles ``basic`` links to gfycat media.
+        """Handles ``basic`` links to gfycat media.
 
         Args:
             source (str): The source url

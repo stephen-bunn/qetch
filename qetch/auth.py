@@ -8,7 +8,7 @@ from multidict import CIMultiDict
 
 
 class AuthTypes(enum.Enum):
-    """ An enumeration of available authentication types.
+    """An enumeration of available authentication types.
 
     Values:
         - ``NONE``: No authentication required
