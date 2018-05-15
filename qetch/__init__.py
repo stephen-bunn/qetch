@@ -3,7 +3,7 @@
 
 import inspect
 
-from . import extractors, downloaders
+from . import exceptions, extractors, downloaders
 from .content import Content
 
 IGNORED_EXTRACTORS = (extractors._common.BaseExtractor, extractors.GenericExtractor)
@@ -41,10 +41,15 @@ def get_extractor(
                 return (
                     extractor_class if not init else extractor_class(*args, **kwargs)
                 )
-    # if no extractor can handle, just return GenericExtractor
-    return (
-        extractors.GenericExtractor if not init else extractor_class(*args, **kwargs)
-    )
+    # if no extractor can handle, try GenericExtractor
+    if extractors.GenericExtractor.can_handle(url):
+        return (
+            extractors.GenericExtractor
+            if not init
+            else extractors.GenericExtractor(*args, **kwargs)
+        )
+
+    raise exceptions.ExtractionError(f"no existing extractor can handle {url!r}")
 
 
 def get_downloader(

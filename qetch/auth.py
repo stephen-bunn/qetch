@@ -4,7 +4,7 @@
 import enum
 import inspect
 from typing import Any, Union, Generator
-from collections import MutableMapping, Iterable
+from collections import Iterable, MutableMapping
 
 import attr
 

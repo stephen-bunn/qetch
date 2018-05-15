@@ -9,7 +9,7 @@ import attr
 from furl import furl
 from requests_html import HTMLSession
 
-from .. import exceptions, auth
+from .. import auth, exceptions
 
 
 @attr.s

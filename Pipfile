@@ -9,6 +9,11 @@ ujson = "*"
 attrs = "*"
 blinker = "*"
 requests-html = "*"
+click = "*"
+click-completion = "*"
+yaspin = "*"
+plumbum = "*"
+tqdm = "*"
 
 [dev-packages]
 Sphinx = "*"
