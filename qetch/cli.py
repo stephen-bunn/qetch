@@ -68,6 +68,8 @@ def _validate_auth(ctx: click.Context, param: str, value: Any):
 @click.version_option(prog_name=__version__.__name__, version=__version__.__version__)
 @click.pass_context
 def cli(ctx: click.Context, quiet: bool = False, verbose: bool = False):
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_usage())
     ctx.obj = ctx.params
 
 
@@ -81,7 +83,7 @@ def cli(ctx: click.Context, quiet: bool = False, verbose: bool = False):
     "-d",
     "--directory",
     type=str,
-    default=os.path.join(os.path.expanduser("~"), "Downloads"),
+    default=os.getcwd(),
     help="Output directory",
 )
 @click.option(
