@@ -53,12 +53,13 @@ def _validate_spinner(ctx: click.Context, param: str, value: Any):
 
 
 def _validate_auth(ctx: click.Context, param: str, value: Any):
-    parsed = _parse_auth(ctx, value)
-    if len(parsed) != 2:
-        raise click.BadParameter(
-            f"auth {value!r} cannot be parsed correctly, {parsed!r}"
-        )
-    return value
+    if value:
+        parsed = _parse_auth(ctx, value)
+        if len(parsed) != 2:
+            raise click.BadParameter(
+                f"auth {value!r} cannot be parsed correctly, {parsed!r}"
+            )
+        return value
 
 
 @click.group(invoke_without_command=True, context_settings=CONTEXT_SETTINGS)
@@ -108,7 +109,7 @@ def cli_download(
     spinner: str = None,
 ):
     registry = None
-    if len(auth) > 0:
+    if isinstance(auth, str) and len(auth) > 0:
         registry = AuthRegistry()
 
     directory = Path(directory)
