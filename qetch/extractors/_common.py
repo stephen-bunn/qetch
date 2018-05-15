@@ -9,8 +9,7 @@ import attr
 from furl import furl
 from requests_html import HTMLSession
 
-from .. import exceptions
-from ..auth import AuthTypes, AuthRegistry
+from .. import exceptions, auth
 
 
 @attr.s
@@ -80,11 +79,11 @@ class BaseExtractor(abc.ABC):
 
         return cls.get_handle(url) is not None
 
-    def authenticate(self, auth: Tuple[str, str]):
+    def authenticate(self, auth_tuple: Tuple[str, str]):
         """Handles authenticating the extractor if necessary.
 
         Args:
-            auth (tuple[str, str]): The authentication tuple is available.
+            auth_tuple (tuple[str, str]): The authentication tuple is available.
         """
 
         pass
@@ -103,7 +102,7 @@ class BaseExtractor(abc.ABC):
         return (ordered_filepaths[0] if len(ordered_filepaths) > 0 else None)
 
     def extract(
-        self, url: str, auth: Tuple[str, str] = None
+        self, url: str, auth_tuple: Tuple[str, str] = None
     ) -> Generator[List[Any], None, None]:
         """Extracts lists of content from a url.
 
@@ -119,7 +118,7 @@ class BaseExtractor(abc.ABC):
 
         Args:
             url (str): The url to extract content from.
-            auth (tuple[str, str], optional): The auth tuple if available.
+            auth_tuple (tuple[str, str], optional): The auth tuple if available.
 
         Raises:
             NotImplementedError: If a given ``handle_{handle_name}``
@@ -158,36 +157,35 @@ class BaseExtractor(abc.ABC):
         if not hasattr(self, handle_method):
             raise NotImplementedError(
                 (
-                    f"no handled method named {handle_method!r} is implemented "
-                    f"for {self!r}"
+                    f"no handled method named {handle_method!r} is implemented for "
+                    f"{self!r}"
                 )
             )
 
-        if self.authentication != AuthTypes.NONE:
-            if not isinstance(auth, tuple):
+        if self.authentication != auth.AuthTypes.NONE:
+            if not isinstance(auth_tuple, tuple):
+                registry = auth.AuthRegistry()
                 # try to get authentication entry from registry
-                registry = AuthRegistry()
                 if self.name not in registry:
                     raise exceptions.AuthenticationError(
                         (
-                            f"no valid authentication found for "
-                            f"{self!r}, received {auth!r} and no "
-                            f"registry entry for key {self.name!r}"
+                            f"no valid authentication found for {self!r}, received "
+                            f"{auth_tuple!r} and no registry entry for key "
+                            f"{self.name!r}"
                         )
                     )
-                auth = registry[self.name]
+                auth_tuple = registry[self.name]
                 del registry
 
             # validate authentication format
-            if len(auth) != len(self.authentication.value):
+            if len(auth_tuple) != len(self.authentication.value):
                 raise exceptions.AuthenticationError(
                     (
-                        f"invalid authentication format for {self!r}, got "
-                        f"values {auth!r} but expects format "
-                        f"{self.authentication.value!r}"
+                        f"invalid authentication format for {self!r}, got values "
+                        f"{auth!r} but expects format {self.authentication.value!r}"
                     )
                 )
-            self.authenticate(auth)
+            self.authenticate(auth_tuple)
 
         # handle extracting content using appropriate extraction method
         for content in getattr(self, handle_method)(url, handle_match):

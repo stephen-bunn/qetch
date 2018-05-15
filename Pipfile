@@ -9,7 +9,6 @@ ujson = "*"
 attrs = "*"
 blinker = "*"
 requests-html = "*"
-multidict = "*"
 
 [dev-packages]
 Sphinx = "*"

@@ -65,8 +65,8 @@ class ImgurExtractor(BaseExtractor):
         if response.status_code not in (200,):
             raise exceptions.ExtractionError(
                 (
-                    f"error retrieving source for {query_url.url!r} "
-                    f"recieved status {response.status_code}"
+                    f"error retrieving source for {query_url.url!r} recieved status "
+                    f"{response.status_code}"
                 )
             )
         return ujson.loads(response.text).get("data")
@@ -187,11 +187,11 @@ class ImgurExtractor(BaseExtractor):
                 )
         yield content_list
 
-    def authenticate(self, auth: Tuple[str, str]):
+    def authenticate(self, auth_tuple: Tuple[str, str]):
         """Handles authenticating the extractor if necessary.
 
         Args:
-            auth (tuple[str, str]): The authentication tuple is available.
+            auth_tuple (tuple[str, str]): The authentication tuple is available.
         """
 
-        self.session.headers.update({"authorization": f"Client-ID {auth[0]}"})
+        self.session.headers.update({"Authorization": f"Client-ID {auth_tuple[0]}"})

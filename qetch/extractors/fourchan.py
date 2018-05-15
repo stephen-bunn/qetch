@@ -60,8 +60,8 @@ class FourChanExtractor(BaseExtractor):
         if response.status_code not in (200,):
             raise exceptions.ExtractionError(
                 (
-                    f"error retrieving source for {query_url.url!r} "
-                    f"recieved status {response.status_code}"
+                    f"error retrieving source for {query_url.url!r} recieved status "
+                    f"{response.status_code}"
                 )
             )
         return ujson.loads(response.text)
