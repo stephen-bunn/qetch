@@ -103,8 +103,8 @@ class FourChanExtractor(BaseExtractor):
                         extension_type if extension_type else post["ext"].split(".")[-1]
                     )
                     content_description = None
-                    if 'com' in post and len(post['com']) > 0:
-                        content_description = HTML(html=post.get('com')).text
+                    if "com" in post and len(post["com"]) > 0:
+                        content_description = HTML(html=post.get("com")).text
 
                     content_list.append(
                         Content(

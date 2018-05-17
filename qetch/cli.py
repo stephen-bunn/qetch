@@ -214,11 +214,14 @@ def cli_download(
                 with _build_progress_bar(
                     ctx,
                     desc=downloading_text,
-                    bar_format=(
-                        "{desc} {percentage:3.0f}% ┃{bar}┃ [ETA {remaining}]"
-                    ),
-                    leave=False
+                    bar_format=("{desc} {percentage:3.0f}% ┃{bar}┃ [ETA {remaining}]"),
+                    leave=False,
                 ) as progress_bar:
+                    if not directory.is_dir():
+                        spinner.write(
+                            colors.dim | f"creating directory {directory.as_posix()!r}"
+                        )
+                        directory.mkdir(parents=True)
                     downloader.download(
                         content,
                         directory.joinpath(f"{content.uid}.{content.extension}"),

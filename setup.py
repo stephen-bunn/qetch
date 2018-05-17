@@ -9,22 +9,17 @@ import setuptools
 
 CURDIR = os.path.abspath(os.path.dirname(__file__))
 REQUIRES = [
-    'beautifulsoup4',
-    'blinker',
-    'certifi',
-    'chardet',
-    'click',
-    'colorama',
     'furl',
-    'idna',
-    'lxml',
-    'orderedmultidict',
-    'requests',
-    'six',
-    'tqdm',
     'ujson',
-    'urllib3',
+    'attrs',
+    'blinker',
+    'requests-html',
+    'click',
+    'click-completion',
     'yaspin',
+    'plumbum',
+    'tqdm',
+    'log-symbols'
 ]
 TEST_REQUIRES = [
     'pytest',
@@ -86,6 +81,9 @@ setuptools.setup(
     install_requires=REQUIRES,
     packages=setuptools.find_packages(),
     keywords=['qetch'],
+    entry_points={
+        'console_scripts': ['qetch=qetch.cli:cli']
+    },
     python_requires='>=3.5',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
