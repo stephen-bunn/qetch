@@ -89,10 +89,10 @@ class FourChanExtractor(BaseExtractor):
                     post_type, url_path, quality, extension_type
                 ) in self._content_configs:
                     # build post_type depending on existing post_type
-                    post_type = (post_type if post_type else "")
+                    post_type = (f"-{post_type}" if post_type else "")
                     content_uid = (
                         f'{self.name}-{matchdict["board"]}-'
-                        f'{matchdict["id"]}-{post["tim"]}-{post_type}'
+                        f'{matchdict["id"]}-{post["tim"]}{post_type}'
                     )
                     content_fragments = [
                         furl(self._img_base).add(
@@ -102,6 +102,9 @@ class FourChanExtractor(BaseExtractor):
                     content_extension = (
                         extension_type if extension_type else post["ext"].split(".")[-1]
                     )
+                    content_description = None
+                    if 'com' in post and len(post['com']) > 0:
+                        content_description = HTML(html=post.get('com')).text
 
                     content_list.append(
                         Content(
@@ -111,7 +114,7 @@ class FourChanExtractor(BaseExtractor):
                             extractor=self,
                             extension=content_extension,
                             title=post.get("filename"),
-                            description=HTML(html=post.get("com", "")).text,
+                            description=content_description,
                             quality=quality,
                             uploaded_by=post.get("name"),
                             uploaded_date=datetime.datetime.fromtimestamp(

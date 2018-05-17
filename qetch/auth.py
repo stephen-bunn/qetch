@@ -46,31 +46,21 @@ class AuthRegistry(MutableMapping):
         for item in self.registry.__iter__():
             yield item
 
-    def __setitem__(self, key: BaseExtractor, value: Any):
-        if not inspect.isclass(key) and issubclass(key, BaseExtractor):
-            raise ValueError(
-                (
-                    f"key to {self.__class__.__name__!r} must be a subclass of "
-                    f"{BaseExtractor!r}"
-                )
-            )
-
-        if key.authentication != AuthTypes.NONE:
-            if (
-                not isinstance(value, Iterable)
-                or len(value) != len(key.authentication.value)
-            ):
-                raise ValueError(
-                    (
-                        f"authentication for {key.name!r} is {key.authentication!r}, "
-                        f"received {value!r}"
-                    )
-                )
-
-        self.registry[key.name] = value
+    def __setitem__(self, key: str, value: Any):
+        self.registry[key] = value
 
     def __getitem__(self, key: Any) -> Any:
         return self.registry[key]
 
     def __delitem__(self, key: Any) -> Any:
         del self.registry[key]
+
+    @classmethod
+    def from_dict(cls, dictionary: dict) -> Any:
+        registry = cls()
+        for (key, value) in dictionary.get("registry", {}).items():
+            registry[key] = value
+        return registry
+
+    def to_dict(self) -> dict:
+        return attr.asdict(self)
