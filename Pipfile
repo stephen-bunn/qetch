@@ -1,37 +1,46 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
-
 furl = "*"
-requests = "*"
-blinker = "*"
 ujson = "*"
-"beautifulsoup4" = "*"
-lxml = "*"
+attrs = "*"
+blinker = "*"
+requests-html = "*"
 click = "*"
-colorama = "*"
-tqdm = "*"
+click-completion = "*"
 yaspin = "*"
-
+plumbum = "*"
+tqdm = "*"
+log-symbols = "*"
 
 [dev-packages]
-
 Sphinx = "*"
 "flake8" = "*"
 pytest = "*"
 coverage = "*"
-pytest-cov = "*"
 "pytest-flake8" = "*"
-ptpython = "*"
-CProfileV = "*"
 "autopep8" = "*"
 sphinx-autodoc-typehints = "*"
-
+black = "*"
+isort = "*"
+ptpython = "*"
+pytest-sugar = "*"
+pytest-cov = "*"
 
 [requires]
+python_version = "3.6"
 
+[pipenv]
+allow_prereleases = true
+
+[scripts]
+test = "pytest"
+test-cov = "pytest --cov"
+make-docs = "make -C ./docs html"
+clean-docs = "make -C ./docs clean"
+open-docs = "python -mwebbrowser ./docs/build/html/index.html"
+black = "black ./qetch"
+isort = "isort -rc ./qetch"

@@ -3,37 +3,51 @@
 
 
 class QetchException(Exception):
-    """ All framework exceptions extend this.
+    """All framework exceptions extend this.
     """
 
     def __init__(self, message: str):
-        (self.message,) = (message,)
+        self.message = message
         super().__init__(self.message)
 
 
 class ExtractorException(QetchException):
-    """ All extractor errors extend this.
+    """All extractor errors extend this.
     """
 
     pass
 
 
 class ExtractionError(ExtractorException):
-    """ Error for when any extraction error occurs.
+    """Error for when any extraction error occurs.
     """
 
     pass
 
 
 class AuthenticationException(QetchException):
-    """ All authentication errors extend this.
+    """All authentication errors extend this.
     """
 
     pass
 
 
 class AuthenticationError(AuthenticationException):
-    """ Error for when any authentication error occurs.
+    """Error for when any authentication error occurs.
+    """
+
+    pass
+
+
+class DownloadException(QetchException):
+    """All download errors extend this.
+    """
+
+    pass
+
+
+class DownloadError(DownloadException):
+    """Error for when any download error occurs.
     """
 
     pass

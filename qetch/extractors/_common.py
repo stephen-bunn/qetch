@@ -3,28 +3,20 @@
 
 import re
 import abc
-from typing import (Any, List, Tuple, Match, Generator,)
+from typing import Any, List, Match, Tuple, Generator
 
-from .. import (exceptions,)
-from ..auth import (AuthRegistry, AuthTypes,)
+import attr
+from furl import furl
+from requests_html import HTMLSession
 
-import furl
-import requests
+from .. import auth, exceptions
 
 
+@attr.s
 class BaseExtractor(abc.ABC):
-    """ The base extractor.
+    """The base extractor.
     `All extractors should extend this.`
     """
-
-    def __repr__(self):
-        """ Returns a string representation of the extractor.
-
-        Returns:
-            str: The string representation of the instance.
-        """
-
-        return (f'<{self.__class__.__name__} "{self.name}">')
 
     @abc.abstractproperty
     def name(self):
@@ -48,19 +40,19 @@ class BaseExtractor(abc.ABC):
 
     @property
     def session(self):
-        """ The default session for the extractor.
+        """The default session for the extractor.
 
         Returns:
-            requests.Session: The default session for the extractor.
+            HTMLSession: The default session for the extractor.
         """
 
-        if not hasattr(self, '_session'):
-            self._session = requests.Session()
+        if not hasattr(self, "_session"):
+            self._session = HTMLSession()
         return self._session
 
     @classmethod
     def get_handle(cls, url: str) -> Tuple[str, Match]:
-        """ Gets the handle match for a given url.
+        """Gets the handle match for a given url.
 
         Args:
             url (str): The url to get the handle match for.
@@ -69,14 +61,14 @@ class BaseExtractor(abc.ABC):
             tuple[str, Match]: A tuple of handle and the match for the url.
         """
 
-        for (handle_name, handle_pattern,) in cls.handles.items():
+        for (handle_name, handle_pattern) in cls.handles.items():
             match = re.match(handle_pattern, url)
             if match:
-                return (handle_name, match,)
+                return (handle_name, match)
 
     @classmethod
     def can_handle(cls, url: str):
-        """ Determines if an extractor can handle a url.
+        """Determines if an extractor can handle a url.
 
         Args:
             url (str): The url to check
@@ -87,17 +79,17 @@ class BaseExtractor(abc.ABC):
 
         return cls.get_handle(url) is not None
 
-    def authenticate(self, auth: Tuple[str, str]):
-        """ Handles authenticating the extractor if necessary.
+    def authenticate(self, auth_tuple: Tuple[str, str]):
+        """Handles authenticating the extractor if necessary.
 
         Args:
-            auth (tuple[str, str]): The authentication tuple is available.
+            auth_tuple (tuple[str, str]): The authentication tuple is available.
         """
 
         pass
 
     def merge(self, ordered_filepaths: List[str]) -> str:
-        """ Handles merging downloaded fragments into a resulting file.
+        """Handles merging downloaded fragments into a resulting file.
 
         Args:
             ordered_filepaths (list[str]): The list of ordered filepaths to \
@@ -110,9 +102,9 @@ class BaseExtractor(abc.ABC):
         return (ordered_filepaths[0] if len(ordered_filepaths) > 0 else None)
 
     def extract(
-        self, url: str, auth: Tuple[str, str]=None
+        self, url: str, auth_tuple: Tuple[str, str] = None
     ) -> Generator[List[Any], None, None]:
-        """ Extracts lists of content from a url.
+        """Extracts lists of content from a url.
 
         Note:
             When an extractor can handle a url with a given
@@ -126,7 +118,7 @@ class BaseExtractor(abc.ABC):
 
         Args:
             url (str): The url to extract content from.
-            auth (tuple[str, str], optional): The auth tuple if available.
+            auth_tuple (tuple[str, str], optional): The auth tuple if available.
 
         Raises:
             NotImplementedError: If a given ``handle_{handle_name}``
@@ -160,35 +152,40 @@ class BaseExtractor(abc.ABC):
             <Content (0.25) "gfycat-GFYCAT_ID-gifUrl">
         """
 
-        (handle_name, handle_match,) = self.get_handle(url)
-        handle_method = f'handle_{handle_name}'
+        (handle_name, handle_match) = self.get_handle(url)
+        handle_method = f"handle_{handle_name}"
         if not hasattr(self, handle_method):
-            raise NotImplementedError((
-                f"no handled method named {handle_method!r} is implemented "
-                f"for {self!r}"
-            ))
+            raise NotImplementedError(
+                (
+                    f"no handled method named {handle_method!r} is implemented for "
+                    f"{self!r}"
+                )
+            )
 
-        if self.authentication != AuthTypes.NONE:
-            if not isinstance(auth, tuple):
+        if self.authentication != auth.AuthTypes.NONE:
+            if not isinstance(auth_tuple, tuple):
+                registry = auth.AuthRegistry()
                 # try to get authentication entry from registry
-                registry = AuthRegistry()
                 if self.name not in registry:
-                    raise exceptions.AuthenticationError((
-                        f"no valid authentication found for "
-                        f"{self!r}, received {auth!r} and no "
-                        f"registry entry for key {self.name!r}"
-                    ))
-                auth = registry[self.name]
+                    raise exceptions.AuthenticationError(
+                        (
+                            f"no valid authentication found for {self!r}, received "
+                            f"{auth_tuple!r} and no registry entry for key "
+                            f"{self.name!r}"
+                        )
+                    )
+                auth_tuple = registry[self.name]
                 del registry
 
             # validate authentication format
-            if len(auth) != len(self.authentication.value):
-                raise exceptions.AuthenticationError((
-                    f"invalid authentication format for {self!r}, got "
-                    f"values {auth!r} but expects format "
-                    f"{self.authentication.value!r}"
-                ))
-            self.authenticate(auth)
+            if len(auth_tuple) != len(self.authentication.value):
+                raise exceptions.AuthenticationError(
+                    (
+                        f"invalid authentication format for {self!r}, got values "
+                        f"{auth!r} but expects format {self.authentication.value!r}"
+                    )
+                )
+            self.authenticate(auth_tuple)
 
         # handle extracting content using appropriate extraction method
         for content in getattr(self, handle_method)(url, handle_match):

@@ -2,56 +2,57 @@
 # MIT License <https://opensource.org/licenses/MIT>
 
 import datetime
-from typing import (Any, Tuple, List, Dict, Match, Generator,)
+from typing import Any, Dict, List, Match, Tuple, Generator
 
-from .. import (exceptions,)
-from ..auth import (AuthTypes,)
-from ..content import (Content,)
-from ._common import (BaseExtractor,)
+from furl import furl
 
-import furl
 import ujson
+
+from .. import exceptions
+from ..auth import AuthTypes
+from ._common import BaseExtractor
+from ..content import Content
 
 
 class GfycatExtractor(BaseExtractor):
-    """ The extractor for links to media from ``gfycat.com``.
+    """The extractor for links to media from ``gfycat.com``.
     """
 
-    name = 'gfycat'
-    description = ('Site which hosts short high-quality video for sharing.')
+    name = "gfycat"
+    description = "Site which hosts short high-quality video for sharing."
     authentication = AuthTypes.NONE
-    domains = ['gfycat.com']
+    domains = ["gfycat.com"]
     handles = {
-        'basic': (
-            r'^https?://(?:www\.)?gfycat\.com/'
-            r'(?:gifs/detail/)?(?P<id>[a-zA-Z]+)/?$'
+        "basic": (
+            r"^https?://(?:www\.)?gfycat\.com/(?:gifs/detail/)?(?P<id>[a-zA-Z]+)/?$"
         ),
-        'raw': (
-            r'^https?://(?:[a-z]+\.)gfycat\.com/'
-            r'(?P<id>[a-zA-Z]+)(?:\.[a-zA-Z0-9]+)$'
-        )
+        "raw": (
+            r"^https?://(?:[a-z]+\.)gfycat\.com/(?P<id>[a-zA-Z]+)(?:\.[a-zA-Z0-9]+)$"
+        ),
     }
 
-    _api_base = 'http://gfycat.com/cajax/get/'
+    _api_base = "http://gfycat.com/cajax/get/"
     _content_urls = (
-        'mp4Url',
-        'webmUrl', 'webpUrl',
-        'mobileUrl', 'mobilePosterUrl',
-        'posterUrl',
-        'thumb360Url', 'thumb360PosterUrl', 'thumb100PosterUrl',
-        'max5mbGif', 'max2mbGif',
-        'mjpgUrl',
-        'miniUrl', 'miniPosterUrl',
-        'gifUrl',
+        "mp4Url",
+        "webmUrl",
+        "webpUrl",
+        "mobileUrl",
+        "mobilePosterUrl",
+        "posterUrl",
+        "thumb360Url",
+        "thumb360PosterUrl",
+        "thumb100PosterUrl",
+        "max5mbGif",
+        "max2mbGif",
+        "mjpgUrl",
+        "miniUrl",
+        "miniPosterUrl",
+        "gifUrl",
     )
-    _quality_map = {
-        'mp4Url': 1.0,
-        'webmUrl': 0.5,
-        'gifUrl': 0.25,
-    }
+    _quality_map = {"mp4Url": 1.0, "webmUrl": 0.5, "gifUrl": 0.25}
 
     def _get_data(self, id: str) -> Dict[str, Any]:
-        """ Gets API data for a specific gfycat id.
+        """Gets API data for a specific gfycat id.
 
         Args:
             id (str): The id of the gfycat content to retrieve.
@@ -63,20 +64,22 @@ class GfycatExtractor(BaseExtractor):
             dict[str,...]: API data dictionary response.
         """
 
-        query_url = furl.furl(self._api_base).add(path=id)
+        query_url = furl(self._api_base).add(path=id)
 
         response = self.session.get(query_url.url)
         if response.status_code not in (200,):
-            raise exceptions.ExtractionError((
-                f"error retrieving source for {query_url.url!r}, "
-                f"recieved status {response.status_code}"
-            ))
-        return ujson.loads(response.text).get('gfyItem')
+            raise exceptions.ExtractionError(
+                (
+                    f"error retrieving source for {query_url.url!r}, recieved status "
+                    f"{response.status_code}"
+                )
+            )
+        return ujson.loads(response.text).get("gfyItem")
 
     def handle_raw(
         self, source: str, match: Match
     ) -> Generator[List[Content], None, None]:
-        """ Handles ``raw`` links to gfycat media.
+        """Handles ``raw`` links to gfycat media.
 
         Args:
             source (str): The source url
@@ -87,31 +90,33 @@ class GfycatExtractor(BaseExtractor):
                 the same source url
         """
 
-        data = self._get_data(match.groupdict()['id'])
-        yield [Content(
-            uid=f'{self.name}-{data["gfyId"]}-{source.split(".")[-1]}',
-            source=source,
-            fragments=[source],
-            extractor=self,
-            extension=source.split('.')[-1],
-            title=data.get('title'),
-            description=data.get('description'),
-            quality=1.0,
-            uploaded_by=(
-                data.get('userName')
-                if data.get('userName') != 'anonymous' else
-                None
-            ),
-            uploaded_date=datetime.datetime.fromtimestamp(
-                int(data.get('createDate'))
-            ),
-            metadata=data
-        )]
+        data = self._get_data(match.groupdict()["id"])
+        yield [
+            Content(
+                uid=f'{self.name}-{data["gfyId"]}-{source.split(".")[-1]}',
+                source=source,
+                fragments=[source],
+                extractor=self,
+                extension=source.split(".")[-1],
+                title=data.get("title"),
+                description=data.get("description"),
+                quality=1.0,
+                uploaded_by=(
+                    data.get("userName")
+                    if data.get("userName") != "anonymous"
+                    else None
+                ),
+                uploaded_date=datetime.datetime.fromtimestamp(
+                    int(data.get("createDate"))
+                ),
+                metadata=data,
+            )
+        ]
 
     def handle_basic(
         self, source: str, match: Match
     ) -> Generator[List[Content], None, None]:
-        """ Handles ``basic`` links to gfycat media.
+        """Handles ``basic`` links to gfycat media.
 
         Args:
             source (str): The source url
@@ -122,28 +127,30 @@ class GfycatExtractor(BaseExtractor):
                 the same source url
         """
 
-        data = self._get_data(match.groupdict()['id'])
+        data = self._get_data(match.groupdict()["id"])
         # build and yield content list
         content_list = []
         for url_type in self._content_urls:
             if url_type in data:
-                content_list.append(Content(
-                    uid=f'{self.name}-{data["gfyId"]}-{url_type}',
-                    source=source,
-                    fragments=[data.get(url_type)],
-                    extractor=self,
-                    extension=data.get(url_type).split('.')[-1],
-                    title=data.get('title'),
-                    description=data.get('description'),
-                    quality=self._quality_map.get(url_type, 0.0),
-                    uploaded_by=(
-                        data.get('userName')
-                        if data.get('userName') != 'anonymous' else
-                        None
-                    ),
-                    uploaded_date=datetime.datetime.fromtimestamp(
-                        int(data.get('createDate'))
-                    ),
-                    metadata=data
-                ))
+                content_list.append(
+                    Content(
+                        uid=f'{self.name}-{data["gfyId"]}-{url_type}',
+                        source=source,
+                        fragments=[data.get(url_type)],
+                        extractor=self,
+                        extension=data.get(url_type).split(".")[-1],
+                        title=data.get("title"),
+                        description=data.get("description"),
+                        quality=self._quality_map.get(url_type, 0.0),
+                        uploaded_by=(
+                            data.get("userName")
+                            if data.get("userName") != "anonymous"
+                            else None
+                        ),
+                        uploaded_date=datetime.datetime.fromtimestamp(
+                            int(data.get("createDate"))
+                        ),
+                        metadata=data,
+                    )
+                )
         yield content_list

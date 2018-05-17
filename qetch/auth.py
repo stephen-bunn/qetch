@@ -1,12 +1,18 @@
-# Copyright (c) 2017 Stephen Bunn (stephen@bunn.io)
+# Copyright (c) 2018 Stephen Bunn <stephen@bunn.io>
 # MIT License <https://opensource.org/licenses/MIT>
 
 import enum
-from typing import (Any, Tuple, Dict,)
+import inspect
+from typing import Any, Union, Generator
+from collections import Iterable, MutableMapping
+
+import attr
+
+from .extractors._common import BaseExtractor
 
 
 class AuthTypes(enum.Enum):
-    """ An enumeration of available authentication types.
+    """An enumeration of available authentication types.
 
     Values:
         - ``NONE``: No authentication required
@@ -15,91 +21,46 @@ class AuthTypes(enum.Enum):
     """
 
     NONE = None
-    BASIC = ('USERNAME', 'PASSWORD',)
-    OAUTH = ('KEY', 'SECRET',)
+    BASIC = ("USERNAME", "PASSWORD")
+    OAUTH = ("KEY", "SECRET")
 
 
-class AuthRegistry(dict):
-    """ Custom borg style registry dictionary.
+@attr.s
+class AuthRegistry(MutableMapping):
+    """The authentication registry.
 
-    This registry dictionary utilizes the borg design pattern and maintains
-    the same state across multiple instances.
-    This means that multiple instances of this object can exist, but the values
-    between them will stay syncronized.
-
-    Examples:
-        Basic usage...
-
-        >>> from qetch.auth import (AuthRegistry,)
-        >>> from qetch.extractors import (GfycatExtractor,)
-        >>> registry_1 = AuthRegistry()
-        >>> registry_1[GfycatExtractor.name] = ('KEY', 'SECRET',)
-        >>> print(registry_1[GfycatExtractor.name])
-        ('KEY', 'SECRET')
-        >>> registry_2 = AuthRegistry()
-        >>> print(registry_2[GfycatExtractor.name])
-        ('KEY', 'SECRET')
-        >>> registry_1[GfycatExtractor.name] = ('USERNAME', 'PASSWORD',)
-        >>> print(registry_2[GfycatExtractor.name])
-        ('USERNAME', 'PASSWORD')
+    Implements the borg pattern for shared state between instances.
     """
-
     __shared_state = {}
 
-    def __init__(self, **kwargs):
-        self.__dict__ = self.__shared_state
-        self.__dict__.update(**kwargs)
+    registry = attr.ib(init=False, repr=False, default={})
 
-    def __setitem__(self, key: Any, value: Any):
-        if not isinstance(key, str) or len(key) <= 0:
-            raise ValueError((
-                f"{self.__class__!r} only allows non-zero length strings as "
-                f"keys, received {key!r}"
-            ))
-        self.__dict__[key] = value
+    def __init__(self, *args, **kwargs):
+        self.__dict__ = self.__shared_state
+        super().__init__(*args, **kwargs)
+
+    def __len__(self) -> int:
+        return len(self.registry)
+
+    def __iter__(self) -> Generator[Any, None, None]:
+        for item in self.registry.__iter__():
+            yield item
+
+    def __setitem__(self, key: str, value: Any):
+        self.registry[key] = value
 
     def __getitem__(self, key: Any) -> Any:
-        return self.__dict__[key]
+        return self.registry[key]
 
-    def __delitem__(self, key: Any):
-        del self.__dict__[key]
+    def __delitem__(self, key: Any) -> Any:
+        del self.registry[key]
 
-    def __repr__(self):
-        return (
-            f'<{self.__class__.__name__} ({hex(id(self))}) '
-            f'"{len(self.__dict__)} entr'
-            f'{"y" if len(self.__dict__) == 1 else "ies"}">'
-        )
+    @classmethod
+    def from_dict(cls, dictionary: dict) -> Any:
+        registry = cls()
+        for (key, value) in dictionary.get("registry", {}).items():
+            registry[key] = value
+        return registry
 
-    def __len__(self):
-        return len(self.__dict__)
-
-    def __iter__(self):
-        return iter(self.__dict__)
-
-    def __cmp__(self, registry):
-        return self.__cmp__(self.__dict__, registry.__dict__)
-
-    def __contains__(self, value: Any):
-        return value in self.__dict__
-
-    def keys(self):
-        return self.__dict__.keys()
-
-    def values(self):
-        return self.__dict__.values()
-
-    def items(self):
-        return self.__dict__.items()
-
-    def copy(self):
-        return self.__dict__.copy()
-
-    def clear(self):
-        return self.__dict__.clear()
-
-    def pop(self, *args):
-        return self.__dict__.pop(*args)
-
-    def update(self, *args, **kwargs):
-        return self.__dict__.update(*args, **kwargs)
+    def to_dict(self) -> dict:
+        return attr.asdict(self)
