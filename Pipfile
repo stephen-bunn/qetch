@@ -15,6 +15,9 @@ yaspin = "*"
 plumbum = "*"
 tqdm = "*"
 log-symbols = "*"
+trio = "*"
+requests = "*"
+asks = "*"
 
 [dev-packages]
 Sphinx = "*"

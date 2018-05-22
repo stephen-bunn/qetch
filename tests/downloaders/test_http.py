@@ -12,7 +12,7 @@ def test_download(http_downloader, sample_http_content, connection_count):
         to_path = Path(tempdir) / str(connection_count)
         http_downloader.download(
             content, to_path.as_posix(),
-            max_connections=connection_count
+            connections=connection_count
         )
 
         md5 = hashlib.md5()

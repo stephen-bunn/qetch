@@ -1,134 +1,168 @@
-# Copyright (c) 2018 Stephen Bunn (stephen@bunn.io)
+# Copyright (c) 2018 Stephen Bunn <stephen@bunn.io>
 # MIT License <https://opensource.org/licenses/MIT>
 
-import os
 import abc
-import enum
-import time
 import uuid
 import shutil
 import itertools
+import functools
 from typing import Any, List, Tuple, Callable
 from tempfile import TemporaryDirectory
-from concurrent.futures import ThreadPoolExecutor
 
 import attr
-import blinker
+import trio
 
 from .. import __version__
 from ..content import Content
 
 
-class DownloadState(enum.Enum):
-    """An enum of allowed download states.
-
-    Values:
-        - ``STOPPED``: indicates the download is stopped (error occured)
-        - ``RUNNING``: indicates the download is running
-        - ``PREPARING``: indicates the download is starting up
-        - ``FINISHED``: indicates the download is finished (successfully)
-    """
-
-    STOPPED = "stopped"
-    RUNNING = "running"
-    PREPARING = "preparing"
-    FINISHED = "finished"
-
-
 @attr.s
 class BaseDownloader(abc.ABC):
     """The base abstract base downloader.
+
     `All downloaders must extend from this class.`
     """
 
-    on_progress = blinker.Signal()
-
     download_state = attr.ib(type=dict, default={}, init=False, repr=False)
-    progress_store = attr.ib(type=dict, default={}, init=False, repr=False)
+    progress_state = attr.ib(type=dict, default={}, init=False, repr=False)
 
     @abc.abstractclassmethod
-    def can_handle(cls, content: Content):
+    def can_handle(cls, content: Content) -> bool:
+        """Determines if a given content can be handled by the downloader.
+
+        Args:
+            content (Content): The content the check.
+
+        Returns:
+            bool: True if the content can be handled, otherwise False.
+        """
         raise NotImplementedError()
 
-    @abc.abstractmethod
-    def handle_download(self, source: str, url: str, to_path: str) -> str:
+    @abc.abstractclassmethod
+    async def handle_download(
+        self, download_id: str, url: str, to_path: str, connections: int = 1
+    ) -> trio.Path:
+        """Handles downloading a specific url.
+
+        Args:
+            download_id (str): The unique id of the download request.
+            url (str): The url to download.
+            to_path (trio.Path): The local path object to save the download.
+            connections (int, optional): The number of allowed connections for \
+                parallel downloading of the url.
+
+        Returns:
+            trio.Path: The downloaded file path object
+        """
         raise NotImplementedError()
 
-    def _calc_ranges(
-        self, content_length: int, max_connections: int
+    def calculate_ranges(
+        self, content_size: int, connection_count: int
     ) -> List[Tuple[int, int]]:
         """Calculates byte ranges given a content size and the number of \
             allowed connections.
 
         Args:
-            content_length (int): The total size of the content to download.
-            max_connections (int): The maximum allowed connections to use.
+            content_size (int): The total size of the content to download.
+            connection_count (int): The number of allowed connections to use.
 
         Returns:
-            list[tuple[int, int]]: A list of size ``max_connections`` tuple \
+            list[tuple[int, int]]: A list of size ``connection_count`` tuple \
                 ``(start, end)`` byte ranges.
         """
 
         (start, end) = itertools.tee(
-            list(range(0, content_length, (content_length // max_connections)))
-            + [content_length]
+            list(range(0, content_size, (content_size // connection_count)))
+            + [content_size]
         )
         next(end, None)
         ranges = list(zip(start, end))
-        if len(ranges) > max_connections:
+        if len(ranges) > connection_count:
             ranges[-2] = (ranges[-2][0], ranges[-1][-1])
             del ranges[-1]
         return ranges
 
-    def handle_progress(
-        self, download_id: str, content_length: int, update_delay: float = 0.1
+    async def _download(
+        self,
+        content: Content,
+        to_path: str,
+        fragments: int = 1,
+        connections: int = 1,
+        progress_hook: Callable[[Any], None] = None,
+        progress_delay: float = 0.1,
+    ):
+        """The hidden async functionality of :func:`~http.HTTPDownloader.download`.
+        """
+
+        download_id = str(uuid.uuid4())
+        with TemporaryDirectory(
+            prefix=f"{__version__.__name__}-{download_id}"
+        ) as tempdir:
+            tempdir = trio.Path(tempdir)
+
+            fragment_paths = []
+            async with trio.open_nursery() as nursery:
+                await nursery.start(
+                    functools.partial(
+                        self.handle_progress,
+                        download_id,
+                        content.get_size(),
+                        progress_hook=progress_hook,
+                        progress_delay=progress_delay,
+                    )
+                )
+                for (fragment_index, fragment) in enumerate(content.fragments):
+                    download_to = tempdir / str(fragment_index)
+                    fragment_paths.append(download_to)
+                    nursery.start_soon(
+                        functools.partial(
+                            self.handle_download,
+                            download_id,
+                            fragment,
+                            download_to,
+                            connections=connections,
+                        )
+                    )
+
+            merged_path = content.extractor.merge(
+                [fragment for fragment in fragment_paths]
+            )
+            shutil.move(merged_path, to_path)
+
+    async def handle_progress(
+        self,
+        download_id: str,
+        content_size: int,
+        progress_hook: Callable[[Any], None] = None,
+        progress_delay: float = 0.1,
+        task_status: Any = None,
     ):
         """The progress reporting handler.
 
         Args:
             download_id (str): The unique id of the download request.
-            content_length (int): The total size of the downloading content.
-            update_delay (float, optional): The frequency (in seconds) which \
+            content_size (int): The total size of the downloading content.
+            progress_hook (callable, optional): A progress hook that accepts the \
+                arguments ``(download_id, current_size, total_size)`` for progress \
+                updates.
+            progress_delay (float, optional): The frequency (in seconds) which \
                 progress updates are emitted.
         """
 
-        try:
-            # setup sync values if they don't exists (race-condition fix)
-            if download_id not in self.download_state:
-                self.download_state[download_id] = DownloadState.PREPARING
-            if download_id not in self.progress_store:
-                self.progress_store[download_id] = 0
+        while True:
+            if callable(progress_hook) and download_id in self.progress_state:
+                current_size = self.progress_state[download_id]
+                if self.progress_state[download_id] >= content_size:
+                    progress_hook(download_id, content_size, content_size)
+                    return
+                else:
+                    progress_hook(download_id, current_size, content_size)
 
-            while True:
-                if self.progress_store[download_id] < content_length:
-                    self.on_progress.send(
-                        download_id,
-                        current=self.progress_store[download_id],
-                        total=content_length,
-                    )
-                elif self.progress_store[
-                    download_id
-                ] >= content_length or self.download_state[
-                    download_id
-                ] == DownloadState.STOPPED:
-                    break
+            if task_status and not task_status._called_started:
+                task_status.started()
+            await trio.sleep(progress_delay)
 
-                time.sleep(update_delay)
-        finally:
-            del self.progress_store[download_id]
-            self.on_progress.send(
-                download_id, current=content_length, total=content_length
-            )
-
-    def download(
-        self,
-        content: Content,
-        to_path: str,
-        max_fragments: int = 1,
-        max_connections: int = 8,
-        progress_hook: Callable[[Any], None] = None,
-        update_delay: float = 0.1,
-    ) -> str:
+    def download(self, *args, **kwargs) -> str:
         """The simplified download method.
 
         Note:
@@ -145,14 +179,14 @@ class BaseDownloader(abc.ABC):
         Args:
             content (Content): The content instance to download.
             to_path (str): The path to save the resulting download to.
-            max_fragments (int, optional): The number of fragments to process
+            fragments (int, optional): The number of fragments to process
                 in parallel.
-            max_connections (int, optional): The number of connections to
+            connections (int, optional): The number of connections to
                 allow for downloading a single fragment.
             progress_hook (callable, optional): A progress hook that accepts
                 the arguments ``(download_id, current_size, total_size)`` for
                 progress updates.
-            update_delay (float, optional): The frequency (in seconds) where
+            progress_delay (float, optional): The frequency (in seconds) where
                 progress updates are sent to the given ``progress_hook``.
 
         Returns:
@@ -163,8 +197,8 @@ class BaseDownloader(abc.ABC):
             currently executing user.
 
             >>> import os
-            >>> from qetch.extractors import (GfycatExtractor,)
-            >>> from qetch.downloaders import (HTTPDownloader,)
+            >>> from qetch.extractors import GfycatExtractor
+            >>> from qetch.downloaders import HTTPDownloader
             >>> content = next(GfycatExtractor().extract(GFYCAT_URL))[0]
             >>> saved_to = HTTPDownloader().download(
             ...     content,
@@ -181,7 +215,7 @@ class BaseDownloader(abc.ABC):
             ...     content,
             ...     os.path.expanduser('~/Downloads/saved_content.mp4'),
             ...     progress_hook=progress,
-            ...     update_delay=0.1)
+            ...     progress_delay=0.1)
               0.00
               0.00
              23.01
@@ -194,56 +228,4 @@ class BaseDownloader(abc.ABC):
             $HOME/Downloads/saved_content.mp4
         """
 
-        assert (
-            max_fragments > 0
-        ), f"'max_fragments' must be at least 1, received {max_fragments!r}"
-        assert max_connections > 0, (
-            f"'max_connections' must be at least 1, received " f"{max_connections!r}"
-        )
-
-        # generate unique download id for state & progress syncing
-        download_id = str(uuid.uuid4())
-        with TemporaryDirectory(
-            prefix=f"{__version__.__name__}[{download_id}]-"
-        ) as temporary_dir:
-            # +1 worker is for progress handler
-            with ThreadPoolExecutor(max_workers=(max_fragments + 1)) as executor:
-                if callable(progress_hook):
-                    self.on_progress.connect(progress_hook)
-                    executor.submit(
-                        self.handle_progress,
-                        *(download_id, content.get_size()),
-                        **{"update_delay": update_delay},
-                    )
-
-                download_futures = []
-                for (fragment_idx, fragment) in enumerate(content.fragments):
-                    download_futures.append(
-                        executor.submit(
-                            self.handle_download,
-                            *(
-                                download_id,
-                                fragment,
-                                os.path.join(temporary_dir, str(fragment_idx)),
-                            ),
-                            **{"max_connections": max_connections},
-                        )
-                    )
-
-                # FIXME: handle KeyboardInterrupt with parent thread correctly
-                try:
-                    while all(future.running() for future in download_futures):
-                        time.sleep(update_delay)
-                    self.download_state[download_id] = DownloadState.FINISHED
-                except Exception as exc:
-                    self.download_state[download_id] = DownloadState.STOPPED
-                    raise exc
-
-                # apply content extractors merge and move result (one step)
-                shutil.move(
-                    content.extractor.merge(
-                        [future.result() for future in download_futures]
-                    ),
-                    to_path,
-                )
-                return to_path
+        trio.run(functools.partial(self._download, *args, **kwargs))

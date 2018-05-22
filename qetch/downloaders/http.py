@@ -1,13 +1,14 @@
-# Copyright (c) 2018 Stephen Bunn (stephen@bunn.io)
+# Copyright (c) 2018 Stephen Bunn <stephen@bunn.io>
 # MIT License <https://opensource.org/licenses/MIT>
 
-from concurrent.futures import ThreadPoolExecutor
+import functools
 
 import attr
-import blinker
-from requests_html import HTMLSession
+import trio
+import asks
+import requests
 
-from ._common import DownloadState, BaseDownloader
+from ._common import BaseDownloader
 from ..content import Content
 
 
@@ -16,11 +17,15 @@ class HTTPDownloader(BaseDownloader):
     """The downloader for HTTP served content.
     """
 
-    _session = HTMLSession()
+    def __attrs_post_init__(self):
+        """Initializes trio for the ``asks`` framework.
+        """
+
+        asks.init("trio")
 
     @classmethod
     def can_handle(cls, content: Content) -> bool:
-        """Determines if a given content can be handled by this downloader.
+        """Determines if a given content can be handled by the http downloader.
 
         Args:
             content (Content): The content the check.
@@ -30,48 +35,46 @@ class HTTPDownloader(BaseDownloader):
         """
 
         return all(
-            cls._session.head(fragment).status_code == 200
-            for fragment in content.fragments
+            requests.head(fragment).status_code == 200 for fragment in content.fragments
         )
 
-    def handle_chunk(
+    async def handle_chunk(
         self,
+        session: asks.Session,
         download_id: str,
         url: str,
-        to_path: str,
+        to_path: trio.Path,
         start: int,
         end: int,
-        chunk_size: int = 1024,
+        accept_ranges: bool = True,
     ):
         """Handles downloading a specific range of bytes for a url.
 
         Args:
+            session: (asks.Session): The session to use for the http requests.
             download_id (str): The unique id of the download request.
             url (str): The url to download.
             to_path (str): The local path to save the download.
             start (int): The starting byte position to download.
             end (int): The ending byte position to download.
-            chunk_size (int, optional): The size of the chunks to stream in.
+            accept_ranges (bool, optional): Indicates if byte ranges are supported.
         """
+        async with await to_path.open("wb") as stream:
+            await stream.seek(start)
+            if accept_ranges:
+                session.headers["range"] = f"bytes={start}-{end}"
+            response = await session.get(url, stream=True)
+            async with response.body:
+                async for chunk in response.body:
+                    await stream.write(chunk)
 
-        with open(to_path, "wb") as file_:
-            file_.seek(start)
-            with self._session.get(
-                url, headers={"range": f"bytes={start}-{end}"}, stream=True
-            ) as request_stream:
-                for segment in request_stream.iter_content(chunk_size=chunk_size):
-                    if self.download_state[download_id] == DownloadState.STOPPED:
-                        return
+                    if download_id not in self.progress_state:
+                        self.progress_state[download_id] = 0
+                    self.progress_state[download_id] += len(chunk)
 
-                    file_.write(segment)
-
-                    if download_id not in self.progress_store:
-                        self.progress_store[download_id] = 0
-                    self.progress_store[download_id] += len(segment)
-
-    def handle_download(
-        self, download_id: str, url: str, to_path: str, max_connections: int = 8
-    ):
+    async def handle_download(
+        self, download_id: str, url: str, to_path: trio.Path, connections: int = 8
+    ) -> trio.Path:
         """Handles downloading a specific url.
 
         Note:
@@ -81,33 +84,39 @@ class HTTPDownloader(BaseDownloader):
         Args:
             download_id (str): The unique id of the download request.
             url (str): The url to download.
-            to_path (str): The local path to save the download.
-            max_connections (int, optional): The number of allowed \
-                connections for parallel downloading of the url.
+            to_path (trio.Path): The local path object to save the download.
+            connections (int, optional): The number of allowed connections for \
+                parallel downloading of the url.
         """
-
-        self.download_state[download_id] = DownloadState.PREPARING
-        headers = self._session.head(url).headers
+        response = await asks.head(url)
+        headers = response.headers
         content_length = int(headers["Content-Length"])
 
         # preallocate file with content size
-        with open(to_path, "wb") as file_:
-            file_.seek(content_length - 1)
-            file_.write(b"\x00")
+        async with await to_path.open("wb") as stream:
+            await stream.seek(content_length - 1)
+            await stream.write(b"\x00")
 
+        accept_ranges = True
         if headers.get("Accept-Ranges").lower() != "bytes":
-            max_connections = 1
+            connections = 1
+            accept_ranges = False
 
-        chunk_futures = []
-        # start thread pool for chunks url with max connections
-        with ThreadPoolExecutor(max_workers=max_connections) as executor:
-            for (start, end) in self._calc_ranges(content_length, max_connections):
-                if self.download_state[download_id] != DownloadState.RUNNING:
-                    self.download_state[download_id] = DownloadState.RUNNING
-                chunk_futures.append(
-                    executor.submit(
-                        self.handle_chunk, *(download_id, url, to_path, start, end)
+        session = asks.Session(connections=connections)
+        # start nested nursery for multi-connection download handler
+        async with trio.open_nursery() as nursery:
+            for (start, end) in self.calculate_ranges(content_length, connections):
+                nursery.start_soon(
+                    functools.partial(
+                        self.handle_chunk,
+                        session,
+                        download_id,
+                        url,
+                        to_path,
+                        start,
+                        end,
+                        accept_ranges=accept_ranges,
                     )
                 )
-            [future.result() for future in chunk_futures]
-            return to_path
+
+        return to_path
