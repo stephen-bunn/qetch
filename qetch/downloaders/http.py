@@ -2,10 +2,11 @@
 # MIT License <https://opensource.org/licenses/MIT>
 
 import functools
+from typing import Any
 
+import asks
 import attr
 import trio
-import asks
 import requests
 
 from ._common import BaseDownloader
@@ -35,11 +36,13 @@ class HTTPDownloader(BaseDownloader):
         """
 
         return all(
-            requests.head(fragment).status_code == 200 for fragment in content.fragments
+            requests.head(fragment).status_code == 200
+            for fragment in content.fragments
         )
 
     async def handle_chunk(
         self,
+        nursery: Any,  # TODO: replace with Nursery class
         session: asks.Session,
         download_id: str,
         url: str,
@@ -59,18 +62,18 @@ class HTTPDownloader(BaseDownloader):
             end (int): The ending byte position to download.
             accept_ranges (bool, optional): Indicates if byte ranges are supported.
         """
+        if accept_ranges:
+            session.headers["range"] = f"bytes={start}-{end}"
+        response = await session.get(url, stream=True)
+        if response.status_code not in (200, 206):
+            await nursery.cancel_scope.cancel()
         async with await to_path.open("wb") as stream:
             await stream.seek(start)
-            if accept_ranges:
-                session.headers["range"] = f"bytes={start}-{end}"
-            response = await session.get(url, stream=True)
-            async with response.body:
-                async for chunk in response.body:
-                    await stream.write(chunk)
-
-                    if download_id not in self.progress_state:
-                        self.progress_state[download_id] = 0
-                    self.progress_state[download_id] += len(chunk)
+            async for chunk in response.body:
+                await stream.write(chunk)
+                if download_id not in self.progress_state:
+                    self.progress_state[download_id] = 0
+                self.progress_state[download_id] += len(chunk)
 
     async def handle_download(
         self, download_id: str, url: str, to_path: trio.Path, connections: int = 8
@@ -109,6 +112,7 @@ class HTTPDownloader(BaseDownloader):
                 nursery.start_soon(
                     functools.partial(
                         self.handle_chunk,
+                        nursery,
                         session,
                         download_id,
                         url,

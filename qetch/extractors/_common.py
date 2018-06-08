@@ -39,7 +39,7 @@ class BaseExtractor(abc.ABC):
         raise NotImplementedError()
 
     @property
-    def session(self):
+    def session(self) -> HTMLSession:
         """The default session for the extractor.
 
         Returns:

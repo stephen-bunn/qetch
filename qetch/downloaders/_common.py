@@ -56,8 +56,9 @@ class BaseDownloader(abc.ABC):
         """
         raise NotImplementedError()
 
+    @classmethod
     def calculate_ranges(
-        self, content_size: int, connection_count: int
+        cls, content_size: int, connection_count: int
     ) -> List[Tuple[int, int]]:
         """Calculates byte ranges given a content size and the number of \
             allowed connections.
@@ -70,7 +71,6 @@ class BaseDownloader(abc.ABC):
             list[tuple[int, int]]: A list of size ``connection_count`` tuple \
                 ``(start, end)`` byte ranges.
         """
-
         (start, end) = itertools.tee(
             list(range(0, content_size, (content_size // connection_count)))
             + [content_size]
@@ -102,15 +102,16 @@ class BaseDownloader(abc.ABC):
 
             fragment_paths = []
             async with trio.open_nursery() as nursery:
-                await nursery.start(
-                    functools.partial(
-                        self.handle_progress,
-                        download_id,
-                        content.get_size(),
-                        progress_hook=progress_hook,
-                        progress_delay=progress_delay,
+                if callable(progress_hook):
+                    await nursery.start(
+                        functools.partial(
+                            self.handle_progress,
+                            download_id,
+                            content.get_size(),
+                            progress_hook=progress_hook,
+                            progress_delay=progress_delay,
+                        )
                     )
-                )
                 for (fragment_index, fragment) in enumerate(content.fragments):
                     download_to = tempdir / str(fragment_index)
                     fragment_paths.append(download_to)
@@ -154,7 +155,7 @@ class BaseDownloader(abc.ABC):
                 current_size = self.progress_state[download_id]
                 if self.progress_state[download_id] >= content_size:
                     progress_hook(download_id, content_size, content_size)
-                    return
+                    break
                 else:
                     progress_hook(download_id, current_size, content_size)
 

@@ -5,7 +5,7 @@ import abc
 
 from qetch.content import (Content,)
 
-import requests
+import requests_html
 
 
 class ExtractorTest(abc.ABC):
@@ -61,7 +61,7 @@ class ExtractorTest(abc.ABC):
 
         is_up = False
         for domain in self.extractor.domains:
-            is_up = requests.head(f'https://{domain}').status_code == 200
+            is_up = requests_html.head(f'https://{domain}').status_code == 200
 
         assert is_up, (
             f'no domains for extractor {self.extractor!r} '
