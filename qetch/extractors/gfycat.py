@@ -131,7 +131,7 @@ class GfycatExtractor(BaseExtractor):
         # build and yield content list
         content_list = []
         for url_type in self._content_urls:
-            if url_type in data:
+            if url_type in data and isinstance(data.get(url_type), str):
                 content_list.append(
                     Content(
                         uid=f'{self.name}-{data["gfyId"]}-{url_type}',

@@ -29,6 +29,7 @@ isort = "*"
 ptpython = "*"
 pytest-sugar = "*"
 pytest-cov = "*"
+pytest-xdist = "*"
 
 [requires]
 python_version = "3.6"
@@ -37,10 +38,10 @@ python_version = "3.6"
 allow_prereleases = true
 
 [scripts]
-test = "pytest"
-test-cov = "pytest --cov"
+tests = "pytest -rc ./tests -n 4"
 make-docs = "make -C ./docs html"
 clean-docs = "make -C ./docs clean"
 open-docs = "python -mwebbrowser ./docs/build/html/index.html"
 black = "black ./qetch"
 isort = "isort -rc ./qetch"
+profile = "bash profile.sh"
