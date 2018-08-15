@@ -37,12 +37,12 @@ def cli(
     help_flag: bool = False,
     quiet: bool = False,
     verbose: bool = False,
-    completion: bool = False
+    completion: bool = False,
 ):
     if ctx.invoked_subcommand is None or help_flag:
         click.echo(utils.get_help(ctx))
     if completion:
-        print(click_completion.get_code(shell='fish', prog_name=__version__.__name__))
+        print(click_completion.get_code(shell="fish", prog_name=__version__.__name__))
     ctx.obj = ctx.params
 
 
@@ -106,7 +106,9 @@ def cli_auth_remove(spinner: Yaspin, registry: AuthRegistry, extractor: str):
     help="Output directory.",
 )
 @utils.use_auth_registry(AUTH_PATH)
-@utils.use_spinner(text="downloading...", side="right")
+@utils.use_spinner(
+    text="downloading...", side="right", color="cyan", attrs=["bold"], report=False
+)
 @click.pass_context
 def cli_download(
     ctx: click.Context, spinner: Yaspin, registry: AuthRegistry, url: str, out_dir: str
@@ -141,22 +143,9 @@ def cli_download(
 
         write_to = out_dir / f"{content.uid}.{content.extension}"
         spinner.text = f"downloading {colors.info | content.uid}..."
-        with utils.build_progressbar(
-            desc=spinner.text,
-            total=100.0,
-            leave=False,
-            bar_format=("{desc} {percentage:3.0f}% ┃{bar}┃ [ETA {remaining}]"),
-        ) as progess_bar:
-            downloader.download(
-                content,
-                write_to,
-                progress_hook=lambda _, current, total: progess_bar.update(
-                    ((current / total) * 100.0) - progess_bar.n
-                ),
-            )
-
-        spinner.text = f"downloaded to {colors.debug | write_to.as_posix()}..."
         spinner.start()
+        downloader.download(content, write_to)
+        spinner.ok(colors.success | write_to.as_posix())
 
 
 utils.load_colors()
