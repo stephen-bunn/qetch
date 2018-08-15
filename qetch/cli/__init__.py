@@ -60,7 +60,7 @@ def cli_auth(ctx: click.Context, help_flag: bool = False):
 
 @click.command("list", short_help="List all authentication entries")
 @utils.use_auth_registry(AUTH_PATH)
-@utils.use_spinner(text="listing authentication entries...", right=True, report=False)
+@utils.use_spinner(text="listing authentication entries...", side="right", report=False)
 def cli_auth_list(spinner: Yaspin, registry: AuthRegistry):
     if len(registry.values()) <= 0:
         raise ValueError(f"no authentication entries")
@@ -73,7 +73,7 @@ def cli_auth_list(spinner: Yaspin, registry: AuthRegistry):
 @click.argument("key", type=str)
 @click.argument("secret", type=str)
 @utils.use_auth_registry(AUTH_PATH)
-@utils.use_spinner(text="adding entry...", right=True, report=False)
+@utils.use_spinner(text="adding entry...", side="right", report=False)
 def cli_auth_add(
     spinner: Yaspin, registry: AuthRegistry, extractor: str, key: str, secret: str
 ):
@@ -87,7 +87,7 @@ def cli_auth_add(
 @click.command("remove", short_help="Remove an existing authentication entry")
 @click.argument("extractor")
 @utils.use_auth_registry(AUTH_PATH)
-@utils.use_spinner(text="removing entry...", right=True)
+@utils.use_spinner(text="removing entry...", side="right")
 def cli_auth_remove(spinner: Yaspin, registry: AuthRegistry, extractor: str):
     if extractor not in registry:
         raise ValueError(f"no entry for {extractor} exists")
@@ -106,7 +106,7 @@ def cli_auth_remove(spinner: Yaspin, registry: AuthRegistry, extractor: str):
     help="Output directory.",
 )
 @utils.use_auth_registry(AUTH_PATH)
-@utils.use_spinner(text="downloading...", right=True)
+@utils.use_spinner(text="downloading...", side="right")
 @click.pass_context
 def cli_download(
     ctx: click.Context, spinner: Yaspin, registry: AuthRegistry, url: str, out_dir: str
