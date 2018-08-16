@@ -21,9 +21,9 @@ AUTH_PATH = CONFIG_DIR / "auth.json"
 click_completion.init()
 
 
-@click.group(invoke_without_command=True)
-@click.option(
-    "-h", "--help", "help_flag", is_flag=True, default=False, help="Show help."
+@click.group(
+    invoke_without_command=True,
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.option("-q", "--quiet", is_flag=True, default=False, help="Silent output.")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="Verbose output.")
@@ -34,28 +34,21 @@ click_completion.init()
 @click.pass_context
 def cli(
     ctx: click.Context,
-    help_flag: bool = False,
     quiet: bool = False,
     verbose: bool = False,
     completion: bool = False,
 ):
-    if ctx.invoked_subcommand is None or help_flag:
-        click.echo(utils.get_help(ctx))
     if completion:
         print(click_completion.get_code(shell="fish", prog_name=__version__.__name__))
     ctx.obj = ctx.params
 
 
 @click.group("auth", invoke_without_command=True)
-@click.option(
-    "-h", "--help", "help_flag", is_flag=True, default=False, help="Show help."
-)
 @click.pass_context
-def cli_auth(ctx: click.Context, help_flag: bool = False):
+def cli_auth(ctx: click.Context):
     """Manage authentication entries.
     """
-    if ctx.invoked_subcommand is None or help_flag:
-        click.echo(utils.get_help(ctx, "auth"))
+    pass
 
 
 @click.command("list", short_help="List all authentication entries")
@@ -105,13 +98,27 @@ def cli_auth_remove(spinner: Yaspin, registry: AuthRegistry, extractor: str):
     default=os.getcwd(),
     help="Output directory.",
 )
+@click.option(
+    "-c",
+    "--connections",
+    "connections",
+    type=int,
+    default=1,
+    help="Threaded downloader connections.",
+)
 @utils.use_auth_registry(AUTH_PATH)
 @utils.use_spinner(
     text="downloading...", side="right", color="cyan", attrs=["bold"], report=False
 )
 @click.pass_context
 def cli_download(
-    ctx: click.Context, spinner: Yaspin, registry: AuthRegistry, url: str, out_dir: str
+    ctx: click.Context,
+    spinner: Yaspin,
+    registry: AuthRegistry,
+    url: str,
+    out_dir: str,
+    connections: int,
+    help_flag: bool = False,
 ):
     out_dir = Path(out_dir)
     spinner.text = f"getting extractor..."
@@ -144,7 +151,7 @@ def cli_download(
         write_to = out_dir / f"{content.uid}.{content.extension}"
         spinner.text = f"downloading {colors.info | content.uid}..."
         spinner.start()
-        downloader.download(content, write_to)
+        downloader.download(content, write_to, max_connections=connections)
         spinner.ok(colors.success | write_to.as_posix())
 
 
