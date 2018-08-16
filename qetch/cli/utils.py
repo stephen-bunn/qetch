@@ -36,6 +36,8 @@ def auth_registry(filepath: str):
     filepath = Path(filepath)
 
     def init():
+        if not filepath.parent.is_dir():
+            filepath.parent.mkdir(parents=True)
         with filepath.open("w") as stream:
             json.dump({}, stream)
 
