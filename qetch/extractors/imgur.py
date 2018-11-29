@@ -23,7 +23,10 @@ class ImgurExtractor(BaseExtractor):
     authentication = AuthTypes.OAUTH
     domains = ["imgur.com", "i.imgur.com"]
     handles = {
-        "basic": r"^https?://(?:www\.)?imgur\.com/(?P<id>[a-zA-Z0-9]+)/?$",
+        "basic": (
+            r"^https?://(?:www\.)?(?:[a-z]\.)imgur\.com/"
+            r"(?P<id>[a-zA-Z0-9]+)(?:\..*)?/?$"
+        ),
         "album": (
             r"^https?://(?:www\.)?imgur\.com/" r"(?:a|gallery)/(?P<id>[a-zA-Z0-9]+)/?$"
         ),
@@ -55,20 +58,23 @@ class ImgurExtractor(BaseExtractor):
             dict[str,....]: API data dictionary response
         """
 
+        default_url = furl(self._api_base).add(path=f"image/{id}")
         query_url = furl(self._api_base).add(
             path=(
-                f'{"/gallery" if is_raw else ""}'
+                f'{"/gallery/" if is_raw else ""}'
                 f'{"album" if is_album else "image"}/{id}'
             )
         )
         response = self.session.get(query_url.url)
         if response.status_code not in (200,):
-            raise exceptions.ExtractionError(
-                (
-                    f"error retrieving source for {query_url.url!r} recieved status "
-                    f"{response.status_code}"
+            response = self.session.get(default_url.url)
+            if response.status_code not in (200,):
+                raise exceptions.ExtractionError(
+                    (
+                        f"error retrieving source for {query_url.url!r} recieved "
+                        f"status {response.status_code}"
+                    )
                 )
-            )
         return ujson.loads(response.text).get("data")
 
     def handle_basic(
