@@ -20,7 +20,7 @@ class GfycatExtractor(BaseExtractor):
 
     name = "gfycat"
     description = "Site which hosts short high-quality video for sharing."
-    authentication = AuthTypes.NONE
+    authentication = AuthTypes.OAUTH
     domains = ["gfycat.com"]
     handles = {
         "basic": (
@@ -31,7 +31,8 @@ class GfycatExtractor(BaseExtractor):
         ),
     }
 
-    _api_base = "http://gfycat.com/cajax/get/"
+    _api_base = "https://api.gfycat.com/v1/gfycats/"
+    _auth_base = "https://api.gfycat.com/v1/oauth/token/"
     _content_urls = (
         "mp4Url",
         "webmUrl",
@@ -154,3 +155,29 @@ class GfycatExtractor(BaseExtractor):
                     )
                 )
         yield content_list
+
+    def authenticate(self, auth_tuple: Tuple[str, str]):
+        """Handles authenticating the extractor if necessary.
+
+        Args:
+            auth_tuple (tuple[str, str]): The authentication tuple is available.
+        """
+
+        # FIXME: currently very greedy with client_credential requests
+        response = self.session.post(self._auth_base, data=ujson.dumps({
+            "grant_type": "client_credentials",
+            "client_id": auth_tuple[0],
+            "client_secret": auth_tuple[1]
+        }))
+        if response.status_code != 200:
+            raise exceptions.AuthenticationError(
+                f"credential request for client {auth_tuple[0]!r} resulted in non 200 "
+                f"status"
+            )
+        token = ujson.loads(response.text).get("access_token", None)
+        if not token:
+            raise exceptions.AuthenticationError(
+                f"credential request for client {auth_tuple[0]!r} resulted in no "
+                f"access token being returned"
+            )
+        self.session.headers.update({"Authorization": f"Bearer {token}"})

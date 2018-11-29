@@ -127,8 +127,11 @@ def cli_download(
     try:
         content_list = list(extractor.extract(url))
         spinner.ok(colors.success | f"{len(content_list)} content")
-    except exceptions.AuthenticationError:
-        raise ValueError(f"missing auth for {colors.debug | extractor.name}")
+    except exceptions.AuthenticationError as exc:
+        raise ValueError(
+            f"missing auth for {colors.debug | extractor.name}, "
+            f"{colors.error | str(exc)}"
+        )
 
     spinner.text = "getting downloader..."
     spinner.start()
